@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labstack/echo"
+	// "github.com/labstack/echo"
 	"labix.org/v2/mgo/bson"
 )
 
@@ -72,7 +72,7 @@ func (userCtl UserControl) Register(c *gin.Context) {
 		}
 
 	}
-	util.JSON(c, util.ResponseMesage{Message: "用户注册", Data: echo.Map{"token": token, "user": echo.Map{"id": user.ID.Hex(), "anNickName": user.AnNickName}}, Error: err})
+	util.JSON(c, util.ResponseMesage{Message: "用户注册", Data: map[string]interface{}{"token": token, "user": map[string]interface{}{"id": user.ID.Hex(), "anNickName": user.AnNickName}}, Error: err})
 
 }
 
@@ -130,7 +130,7 @@ func (userCtl UserControl) PhoneLogin(c *gin.Context) {
 	var err error
 	var token string
 	var expire time.Time
-	var user *models.User
+	var user = new(models.User)
 	var resultUsers []models.User
 	register := new(Register)
 
@@ -152,7 +152,10 @@ func (userCtl UserControl) PhoneLogin(c *gin.Context) {
 		}
 
 	}
-	util.JSON(c, util.ResponseMesage{Message: "短信登陆", Data: echo.Map{"token": token, "expire": expire, "user": echo.Map{"id": user.ID.Hex(), "anNickName": user.AnNickName}}, Error: err})
+
+	var result = map[string]interface{}{"token": token, "expire": expire, "user": map[string]interface{}{"id": user.ID.Hex(), "anNickName": user.AnNickName}}
+
+	util.JSON(c, util.ResponseMesage{Message: "短信登陆", Data: result, Error: err})
 
 }
 
