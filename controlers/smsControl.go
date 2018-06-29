@@ -37,7 +37,7 @@ func SendSMS(c *gin.Context) {
 				for _, v := range code {
 					codeStr += strconv.Itoa(int(v))
 				}
-				err = util.SendSMS(phone, "80014", codeStr)
+				err = util.SendSMS(phone, "84934", codeStr)
 			}
 
 		} else {

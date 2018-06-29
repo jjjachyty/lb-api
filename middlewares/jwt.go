@@ -3,10 +3,12 @@ package middlewares
 import (
 	"fmt"
 	"lb-api/models"
+	"lb-api/util"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
+	"labix.org/v2/mgo/bson"
 )
 
 func JWT() *jwt.GinJWTMiddleware {
@@ -24,16 +26,22 @@ func JWT() *jwt.GinJWTMiddleware {
 			// 	}, true
 			// }
 			fmt.Println("Authenticator", userId, password)
-			var user = &models.User{Phone: userId, Passwd: password}
-			if err := user.ValidUser(); nil == err {
-
-				return user, true
+			// var user = &models.User{Phone: userId, Passwd: password}
+			users, err := models.User{}.FindAllByCondition(bson.M{"phone": userId, "passwd": util.MD5(password)})
+			if len(users) > 0 && nil == err {
+				user := users[0]
+				return models.User{ID: user.ID, Phone: user.Phone, NickName: user.NickName, AnNickName: user.AnNickName, IDCardValid: user.IDCardValid}, true
 			}
 
 			return nil, false
 		},
+
+		PayloadFunc: func(data interface{}) jwt.MapClaims {
+			user := data.(models.User)
+			return jwt.MapClaims{"id": user.ID.Hex(), "phone": user.Phone, "nickName": user.NickName, "anNickName": user.AnNickName, "idCardValid": user.IDCardValid}
+		},
 		Authorizator: func(user interface{}, c *gin.Context) bool {
-			fmt.Println("Authorizator\n\n", user)
+			fmt.Println("验证JWT\n\n", user)
 			if v, ok := user.(string); ok && v != "" {
 				return true
 			}

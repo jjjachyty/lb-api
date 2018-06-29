@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"lb-api/controlers"
+	"lb-api/controlers/purchase"
 	"lb-api/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -80,9 +81,12 @@ func Init(e *gin.Engine) {
 	//物流代购
 
 	purch := api.Group("/purch")
-	purch.GET("/list", controlers.PurchaseControl{}.List)
-	purch.GET("/get", controlers.PurchaseControl{}.Get)
 
+	purch.GET("/list", purchase.PurchaseControl{}.List)
+	purch.GET("/get", purchase.PurchaseControl{}.Get)
+
+	purch.Use(middlewares.JWT().MiddlewareFunc())
+	purch.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
 	// user.Any("/text", func(c *gin.Context) error {
 	// 	user := c.Get("user").(*jwt.Token)
 	// 	claims := user.Claims.(*util.JwtCustomClaims)

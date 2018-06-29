@@ -142,9 +142,10 @@ func (userCtl UserControl) PhoneLogin(c *gin.Context) {
 			if nil == err && 1 == len(resultUsers) {
 				user = &resultUsers[0]
 				data := make(map[string]interface{}, 0)
+				data["id"] = user.ID.Hex()
 				data["phone"] = user.Phone
 				data["forgotPasswd"] = true
-				token, expire, err = middlewares.GetJWTToken(user.ID.Hex(), data)
+				token, expire, err = middlewares.GetJWTToken(user.Phone, data)
 			}
 
 		} else {

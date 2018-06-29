@@ -65,3 +65,8 @@ func RandNumber(len int) string {
 	fmt.Println("aaaaaaa", *(*string)(unsafe.Pointer(&result)))
 	return result
 }
+
+func GetLocation() *time.Location {
+	l, _ := time.LoadLocation("Asia/Chongqing")
+	return l
+}
