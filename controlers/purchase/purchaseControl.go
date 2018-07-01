@@ -35,13 +35,13 @@ func (PurchaseControl) Get(c *gin.Context) {
 	var qos []purchase.QuotationOrder
 	var err error
 	if "" != id {
-		cond = bson.M{"_id": bson.ObjectIdHex(id), "state": "1"}
+		cond = bson.M{"_id": bson.ObjectIdHex(id)}
 
 		results, err = purchase.Purchase{}.Find("_id", 10, bson.M{}, cond)
 		if len(results) > 0 {
 			result = results[0]
 			//查询报价单
-			qos, err = purchase.QuotationOrder{}.Find("createAt", 0, bson.M{}, bson.M{"purchaseID": id})
+			qos, err = purchase.QuotationOrder{}.Find("-createAt", 0, bson.M{}, bson.M{"purchaseID": id})
 			if nil == err {
 				result.QuotationOrders = qos
 			}

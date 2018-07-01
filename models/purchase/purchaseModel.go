@@ -54,3 +54,8 @@ func (Purchase) Find(sort string, limit int, selectM bson.M, condition bson.M) (
 	err := query.All(&purchase)
 	return purchase, err
 }
+
+//Update 更新代购单
+func (Purchase) Update(selector bson.M, update bson.M) error {
+	return models.DB.C(purchaseCN).Update(selector, update)
+}

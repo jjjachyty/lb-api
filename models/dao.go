@@ -15,6 +15,7 @@ var DB *mgo.Database
 
 func init() {
 	session, err := mgo.Dial("106.12.10.77:27017")
+
 	DB = session.DB(DbName)
 	//session, err := mgo.Dial("localhost")
 	if nil != err {

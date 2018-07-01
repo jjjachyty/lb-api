@@ -87,6 +87,8 @@ func Init(e *gin.Engine) {
 
 	purch.Use(middlewares.JWT().MiddlewareFunc())
 	purch.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
+	purch.POST("/refuse", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
+
 	// user.Any("/text", func(c *gin.Context) error {
 	// 	user := c.Get("user").(*jwt.Token)
 	// 	claims := user.Claims.(*util.JwtCustomClaims)

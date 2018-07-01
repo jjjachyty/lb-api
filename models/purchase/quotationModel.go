@@ -20,16 +20,17 @@ type DayTime struct {
 
 //报价单
 type QuotationOrder struct {
-	ID         bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id" binding:"-"`
-	PurchaseID string        `json:"purchaseID" form:"purchaseID" query:"purchaseID" bson:"purchaseID" binding:"required"` //代购单号
-	Amount     float64       `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"-"`                        //总金额
-	Products   []Product     `json:"products" form:"products[]" query:"products[]" bson:"products" binding:"checkProducts"`
-	Charge     float64       `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"required"`        //服务费
-	BuyByID    string        `json:"buyByID" form:"buyByID" query:"buyByID" bson:"buyByID" binding:"-"`           //报价人ID
-	BuyByName  string        `json:"buyByName" form:"buyByName" query:"buyByName" bson:"buyByName" binding:"-"`   //报价人昵称
-	CreateAt   time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`              //报价时间
-	State      string        `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                   //报价单状态
-	ExpiryTime DayTime       `json:"expiryTime" form:"-" query:"expiryTime" bson:"expiryTime" binding:"required"` //失效时间
+	ID           bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id" binding:"-"`
+	PurchaseID   string        `json:"purchaseID" form:"purchaseID" query:"purchaseID" bson:"purchaseID" binding:"required"` //代购单号
+	Amount       float64       `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"-"`                        //总金额
+	Products     []Product     `json:"products" form:"products[]" query:"products[]" bson:"products" binding:"checkProducts"`
+	Charge       float64       `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"required"`                  //服务费
+	BuyByID      string        `json:"buyByID" form:"buyByID" query:"buyByID" bson:"buyByID" binding:"-"`                     //报价人ID
+	BuyByName    string        `json:"buyByName" form:"buyByName" query:"buyByName" bson:"buyByName" binding:"-"`             //报价人昵称
+	CreateAt     time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`                        //报价时间
+	State        string        `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                             //报价单状态
+	RefuseReason string        `json:"refuseReason" form:"refuseReason" query:"refuseReason" bson:"refuseReason" binding:"-"` //拒绝理由
+	ExpiryTime   DayTime       `json:"expiryTime" form:"-" query:"expiryTime" bson:"expiryTime" binding:"required"`           //失效时间
 }
 
 func (t *DayTime) UnmarshalJSON(data []byte) (err error) {
@@ -75,6 +76,17 @@ func (QuotationOrder) Find(sort string, limit int, selectM bson.M, condition bso
 	}
 	err := query.All(&qos)
 	return qos, err
+}
+
+//新增文章
+func (qo QuotationOrder) Delete() error {
+	util.Glog.Debugf("删除报价单%v", qo.ExpiryTime)
+	return models.DB.C(quotationOrderCN).RemoveId(qo.ID)
+}
+
+//Update 更新代购单
+func (QuotationOrder) Update(selector bson.M, update bson.M) error {
+	return models.DB.C(quotationOrderCN).Update(selector, update)
 }
 
 func init() {
