@@ -14,9 +14,8 @@ import (
 
 type QuotationOrderControl struct{}
 
-func (QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
+func (qoc QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 	var err error
-	var expiryTime time.Time
 	qo := new(purchase.QuotationOrder)
 	//处理失效时间
 	// expiryTime, err = getTime(c.PostForm("expiryTime"))
@@ -38,25 +37,62 @@ func (QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 		qo.Amount += qo.Charge
 		fmt.Println("qo.CreateAt", qo.CreateAt)
 		// qo.ExpiryTime = expiryTime
-		err = qo.Insert()
-		if err == nil {
-			//更新代购单为报价反馈中
-			err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "1"}})
-			if nil != err { //报价失败
-				err = purchase.QuotationOrder{ID: qo.ID}.Delete()
-			}
-			util.Glog.Debugf("删除-报价单%v-状态%v", qo, err)
+		//检查能否新增
+		err = qoc.canNew(*qo)
+		if nil == err {
 
+			err = qo.Insert()
+			if err == nil {
+				//更新代购单为报价反馈中
+				err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "1"}})
+				if nil != err { //报价失败
+					err = purchase.QuotationOrder{ID: qo.ID}.Delete()
+				}
+				util.Glog.Debugf("删除-报价单%v-状态%v", qo, err)
+
+			}
 		}
 	}
 	// }
-	fmt.Println("NewQuotationOrder", err, expiryTime)
 	util.JSON(c, util.ResponseMesage{Message: "新增报价单", Data: nil, Error: err})
 
 }
 
-func (QuotationOrderControl) UpdateQuotationOrder(c *gin.Context) {
+func (qoc QuotationOrderControl) UpdateQuotationOrder(c *gin.Context) {
+	var err error
+	qo := new(purchase.QuotationOrder)
+	//处理失效时间
+	// expiryTime, err = getTime(c.PostForm("expiryTime"))
+	// if nil == err {
 
+	if err = c.ShouldBindJSON(qo); nil == err {
+
+		jwtData := middlewares.GetPalyloadFromToken(c)
+
+		if qo.BuyByID == jwtData["id"].(string) { //本人操作本人的报价单
+			//处理总金额
+			for _, p := range qo.Products {
+				qo.Amount += p.Price
+			}
+			qo.Amount += qo.Charge
+		}
+		err = qoc.canUpdate(*qo)
+		if nil == err {
+
+			err = qo.Update(bson.M{"_id": qo.ID}, bson.M{"$set": bson.M{"state": "1","refuseReason":"", "products": qo.Products, "amount": qo.Amount, "charge": qo.Charge, "expiryTime": qo.ExpiryTime, "deliveryTime": qo.DeliveryTime}})
+			if err == nil {
+				//更新代购单为报价反馈中
+				err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "1"}})
+				if nil != err { //报价失败
+					err = purchase.QuotationOrder{ID: qo.ID}.Delete()
+				}
+				util.Glog.Debugf("删除-报价单%v-状态%v", qo, err)
+
+			}
+		}
+	}
+	// }
+	util.JSON(c, util.ResponseMesage{Message: "更新报价单", Data: nil, Error: err})
 }
 
 func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
@@ -83,22 +119,54 @@ func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
 
 }
 
-func (QuotationOrderControl) canNew(qo purchase.QuotationOrder) {
+func (QuotationOrderControl) canNew(qo purchase.QuotationOrder) error {
 	var err error
-	var purchases []purchase.QuotationOrder
+	var purchases []purchase.Purchase
 	var quotations []purchase.QuotationOrder
 	//检查报价单是否能报价
 	//检查是否已经报过价
 	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
-	if (purchase) == 1 {
-		if "0" == purchases[0].State { //代价单为待报价状态
-			//检查是否重复报价
-			quotations, err = purchase.QuotationOrder{}.Find("_id", 0, bson.M{}, bson.M{"purchaseID": qo.PurchaseID, "createBy": qo.BuyByID})
+	fmt.Println("代购单purchases", purchases, purchases[0].State)
+	if len(purchases) == 1 {
+		if qo.BuyByID != purchases[0].CreateBy {
+			if "0" == purchases[0].State { //代价单为待报价状态
+				//检查是否重复报价
+				fmt.Println("purchaseIDs", qo.PurchaseID, "createBy", qo.BuyByID)
+				quotations, err = purchase.QuotationOrder{}.Find("_id", 0, bson.M{}, bson.M{"purchaseID": qo.PurchaseID, "buyByID": qo.BuyByID})
+				if len(quotations) > 0 {
+					err = &util.GError{Code: 0, Err: "已报价不能重复报价"}
+				}
+
+			} else {
+				err = &util.GError{Code: 0, Err: "该报价单非[待报价]状态"}
+			}
 		} else {
-			err = util.GError{Code: 0, Err: "该报价单非[待报价]状态"}
+			err = &util.GError{Code: 0, Err: "不能自己代购自己的"}
 		}
 	} else {
-		err = util.GError{Code: 0, Err: "该报价单不存在"}
+		err = &util.GError{Code: 0, Err: "该报价单不存在"}
+
+	}
+	return err
+}
+
+func (QuotationOrderControl) canUpdate(qo purchase.QuotationOrder) error {
+	var err error
+	var purchases []purchase.Purchase
+	//检查报价单是否能报价
+	//检查是否已经报过价
+	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
+
+	if len(purchases) == 1 {
+		if qo.BuyByID != purchases[0].CreateBy {
+			if "0" != purchases[0].State { //代价单为待报价状态
+				err = &util.GError{Code: 0, Err: "该报价单非[待报价]状态"}
+			}
+		} else {
+			err = &util.GError{Code: 0, Err: "不能自己代购自己的"}
+		}
+	} else {
+		err = &util.GError{Code: 0, Err: "该报价单不存在"}
 
 	}
 	return err

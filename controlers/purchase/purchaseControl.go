@@ -20,7 +20,7 @@ func (PurchaseControl) List(c *gin.Context) {
 		appCond = bson.M{"$or": []bson.M{bson.M{"content": bson.M{"$regex": keyWords}}, bson.M{"products.name": bson.M{"$regex": keyWords}}, bson.M{"products.describe": bson.M{"$regex": keyWords}}, bson.M{"location": bson.M{"$regex": keyWords}}}}
 
 	}
-	cond = bson.M{"$and": []bson.M{bson.M{"state": "1"}, appCond}}
+	cond = bson.M{"$and": []bson.M{bson.M{"state": "0"}, appCond}}
 
 	result, err := purchase.Purchase{}.Find(sort, 10, bson.M{}, cond)
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})

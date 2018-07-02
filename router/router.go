@@ -87,6 +87,8 @@ func Init(e *gin.Engine) {
 
 	purch.Use(middlewares.JWT().MiddlewareFunc())
 	purch.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
+	purch.PUT("/quotation", purchase.QuotationOrderControl{}.UpdateQuotationOrder)
+
 	purch.POST("/refuse", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
 
 	// user.Any("/text", func(c *gin.Context) error {

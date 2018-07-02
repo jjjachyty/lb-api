@@ -17,6 +17,9 @@ import (
 type DayTime struct {
 	time.Time
 }
+type Date struct {
+	time.Time
+}
 
 //报价单
 type QuotationOrder struct {
@@ -31,11 +34,18 @@ type QuotationOrder struct {
 	State        string        `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                             //报价单状态
 	RefuseReason string        `json:"refuseReason" form:"refuseReason" query:"refuseReason" bson:"refuseReason" binding:"-"` //拒绝理由
 	ExpiryTime   DayTime       `json:"expiryTime" form:"-" query:"expiryTime" bson:"expiryTime" binding:"required"`           //失效时间
+	DeliveryTime Date          `json:"deliveryTime" form:"-" query:"deliveryTime" bson:"deliveryTime" binding:"required"`     //失效时间
 }
 
 func (t *DayTime) UnmarshalJSON(data []byte) (err error) {
 	now, err := getTime(string(data[1 : len(data)-1]))
 	*t = DayTime{now}
+	return
+}
+func (t *Date) UnmarshalJSON(data []byte) (err error) {
+	fmt.Println("string(data)", string(data))
+	now, err := time.Parse("2006-01-02", string(data[1:len(data)-1]))
+	*t = Date{now}
 	return
 }
 
@@ -98,7 +108,7 @@ func init() {
 func getTime(src string) (time.Time, error) {
 	fmt.Println("srcsrcsrc", src)
 	if "" == src {
-		return time.Time{}, &util.GError{Code: 0, Err: "截止时间不能为空"}
+		return time.Time{}, &util.GError{Code: 0, Err: "时间不能为空"}
 	}
 
 	n := time.Now()
@@ -107,11 +117,13 @@ func getTime(src string) (time.Time, error) {
 	day := n.Day()
 	hour, _ := strconv.Atoi(strings.Split(src, ":")[0])
 	min, _ := strconv.Atoi(strings.Split(src, ":")[1])
-	fmt.Println("\n\n\n", hour, min, strings.Split(src, ":")[0], strings.Split(src, ":")[1])
+
 	t := time.Date(year, month, day, hour, min, 0, 0, time.Local)
-	fmt.Println("t", t, "n", n)
-	if t.Before(n) {
-		return time.Time{}, &util.GError{Code: 0, Err: "截止时间不能小于当前时间"}
+	//默认预留10分钟响应
+	fn := n.Add(10 * time.Minute)
+
+	if t.Before(fn) {
+		return time.Time{}, &util.GError{Code: 0, Err: "截止时间必须大于" + fn.Format("2006-01-02 15:04")}
 	}
 	return t, nil
 }
