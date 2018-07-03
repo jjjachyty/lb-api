@@ -5,6 +5,7 @@ import (
 	"lb-api/middlewares"
 	"lb-api/models/purchase"
 	"lb-api/util"
+	"strconv"
 	"time"
 
 	"labix.org/v2/mgo/bson"
@@ -71,46 +72,61 @@ func (qoc QuotationOrderControl) UpdateQuotationOrder(c *gin.Context) {
 
 		if qo.BuyByID == jwtData["id"].(string) { //本人操作本人的报价单
 			//处理总金额
+			qo.Amount = 0
 			for _, p := range qo.Products {
 				qo.Amount += p.Price
 			}
 			qo.Amount += qo.Charge
-		}
-		err = qoc.canUpdate(*qo)
-		if nil == err {
 
-			err = qo.Update(bson.M{"_id": qo.ID}, bson.M{"$set": bson.M{"state": "1","refuseReason":"", "products": qo.Products, "amount": qo.Amount, "charge": qo.Charge, "expiryTime": qo.ExpiryTime, "deliveryTime": qo.DeliveryTime}})
-			if err == nil {
-				//更新代购单为报价反馈中
-				err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "1"}})
-				if nil != err { //报价失败
-					err = purchase.QuotationOrder{ID: qo.ID}.Delete()
+			err = qoc.canUpdate(*qo)
+			if nil == err {
+
+				err = qo.Update(bson.M{"_id": qo.ID}, bson.M{"$set": bson.M{"state": "1", "refuseReason": "", "products": qo.Products, "amount": qo.Amount, "charge": qo.Charge, "expiryTime": qo.ExpiryTime, "deliveryTime": qo.DeliveryTime}})
+				if err == nil {
+					//更新代购单为报价反馈中
+					err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "1"}})
+					if nil != err { //报价失败
+						err = purchase.QuotationOrder{ID: qo.ID}.Delete()
+					}
+					util.Glog.Debugf("删除-报价单%v-状态%v", qo, err)
+
 				}
-				util.Glog.Debugf("删除-报价单%v-状态%v", qo, err)
-
 			}
+		} else {
+			err = &util.GError{Code: 0, Err: "非本人报价单,非法操作"}
 		}
 	}
 	// }
 	util.JSON(c, util.ResponseMesage{Message: "更新报价单", Data: nil, Error: err})
 }
 
+//RefuseQuotationOrder 拒绝报价单
 func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
 	var purchs []purchase.Purchase
+	var allowRepeatBool bool
 	var err error
 	quotationID := c.PostForm("quotationID")
 	purchaseID := c.PostForm("purchaseID")
+	reasonType := c.PostForm("reasonType")
+
 	refuseReason := c.PostForm("reason")
-	if "" != quotationID && bson.IsObjectIdHex(purchaseID) && "" != refuseReason {
+	allowRepeat := c.PostForm("allowRepeat")
+	if "" != quotationID && bson.IsObjectIdHex(purchaseID) && "" != refuseReason && "" != allowRepeat && "" != reasonType {
 		//验证是否是本人操作自己的代购单
 		purchs, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(purchaseID), "createBy": middlewares.GetUserIDFromToken(c)})
 		if len(purchs) == 1 { //是本人操作
 			//更新代购单和报价单
-			util.Glog.Debugf("代购单%s拒绝报价单%s,拒绝理由%s", purchaseID, quotationID, refuseReason)
-			err = purchase.QuotationOrder{}.Update(bson.M{"_id": bson.ObjectIdHex(quotationID)}, bson.M{"$set": bson.M{"state": "0", "refuseReason": refuseReason}})
+			util.Glog.Debugf("代购单%s拒绝报价单%s,拒绝理由%s,运行再次报价%s", purchaseID, quotationID, refuseReason, allowRepeat)
+			allowRepeatBool, err = strconv.ParseBool(allowRepeat)
 			if nil == err {
-				err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(purchaseID)}, bson.M{"$set": bson.M{"state": "0"}})
+				err = purchase.QuotationOrder{}.Update(bson.M{"_id": bson.ObjectIdHex(quotationID)}, bson.M{"$set": bson.M{"state": "0", "reasonType": reasonType, "refuseReason": refuseReason, "allowRepeat": allowRepeatBool}})
+				if nil == err {
+					err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(purchaseID)}, bson.M{"$set": bson.M{"state": "0"}})
+				}
 			}
+
+		} else {
+			err = &util.GError{Code: 0, Err: "非本人代购单,非法操作"}
 		}
 	} else {
 		err = &util.GError{Code: 0, Err: "数据完整性错误"}
@@ -126,7 +142,6 @@ func (QuotationOrderControl) canNew(qo purchase.QuotationOrder) error {
 	//检查报价单是否能报价
 	//检查是否已经报过价
 	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
-	fmt.Println("代购单purchases", purchases, purchases[0].State)
 	if len(purchases) == 1 {
 		if qo.BuyByID != purchases[0].CreateBy {
 			if "0" == purchases[0].State { //代价单为待报价状态

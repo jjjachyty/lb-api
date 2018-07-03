@@ -11,10 +11,11 @@ import (
 )
 
 var (
-	ACCESS_KEY          = "TvtvJ6rK7JfRmuDQvRfsZZ9zm1JvD_MotrxgT4aN"
-	SECRET_KEY          = "noyP3xm9Ibj_Al1CqCHdS7H6aWP4lsg15ps2IZXy"
-	AVATAR_BUCKET_NAME  = "luobo"
-	ARTICLE_BUCKET_NAME = "luobo-article"
+	ACCESS_KEY           = "TvtvJ6rK7JfRmuDQvRfsZZ9zm1JvD_MotrxgT4aN"
+	SECRET_KEY           = "noyP3xm9Ibj_Al1CqCHdS7H6aWP4lsg15ps2IZXy"
+	AVATAR_BUCKET_NAME   = "luobo"
+	ARTICLE_BUCKET_NAME  = "luobo-article"
+	PURCHASE_BUCKET_NAME = "4t-purchase"
 )
 
 //获取骑牛云上传key
@@ -25,11 +26,16 @@ func GetQnToken(c *gin.Context) {
 	tokenType := c.Query("type")
 
 	if "" != tokenType {
-		if "1" == tokenType { //头像
+
+		switch(tokenType){
+		case "1":
 			scope = AVATAR_BUCKET_NAME + ":" + GetUserIDFromToken(c)
-		} else {
+		case "2":
 			scope = ARTICLE_BUCKET_NAME
+		case "3":
+			scope = PURCHASE_BUCKET_NAME
 		}
+
 		putPolicy := storage.PutPolicy{
 			Scope:      scope,
 			InsertOnly: 0,

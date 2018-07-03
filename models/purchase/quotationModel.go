@@ -32,9 +32,11 @@ type QuotationOrder struct {
 	BuyByName    string        `json:"buyByName" form:"buyByName" query:"buyByName" bson:"buyByName" binding:"-"`             //报价人昵称
 	CreateAt     time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`                        //报价时间
 	State        string        `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                             //报价单状态
+	ReasonType   string         `json:"reasonType" form:"reasonType" query:"reasonType" bson:"reasonType" binding:"-"`                             //拒绝原因
 	RefuseReason string        `json:"refuseReason" form:"refuseReason" query:"refuseReason" bson:"refuseReason" binding:"-"` //拒绝理由
 	ExpiryTime   DayTime       `json:"expiryTime" form:"-" query:"expiryTime" bson:"expiryTime" binding:"required"`           //失效时间
 	DeliveryTime Date          `json:"deliveryTime" form:"-" query:"deliveryTime" bson:"deliveryTime" binding:"required"`     //失效时间
+	AllowRepeat  bool          `json:"allowRepeat" form:"allowRepeat" query:"allowRepeat" bson:"allowRepeat"`                 //是否允许再次报价
 }
 
 func (t *DayTime) UnmarshalJSON(data []byte) (err error) {
