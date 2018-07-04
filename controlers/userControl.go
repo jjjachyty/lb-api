@@ -107,7 +107,7 @@ func (userCtl UserControl) GetUserProfile(c *gin.Context) {
 }
 
 //UpdateByID 更新用户信息
-func (userCtl UserControl) UpdateByID(c *gin.Context) {
+func (userCtl UserControl) Update(c *gin.Context) {
 	var err error
 	var user = new(models.User)
 
@@ -194,13 +194,45 @@ func (userCtl UserControl) ModifyPasswd(c *gin.Context) {
 
 }
 
-func (userCtl UserControl) UpdateByIDAddress(c *gin.Context) {
+func (userCtl UserControl) UpdateAddress(c *gin.Context) {
+	var address = new(models.Address)
+	var err error
+	var id = c.PostForm("id")
+	if err = c.ShouldBind(address); nil == err {
+		address.ID = bson.ObjectIdHex(id)
+
+		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c)), "address._id": address.ID}, bson.M{"$set": bson.M{"address.$.province": address.Province, "address.$.city": address.City, "address.$.county": address.County, "address.$.street": address.Street}})
+	} else {
+		err = &util.GError{Code: 0, Err: "数据完整性错误"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "修改收获地址", Data: nil, Error: err})
+
+}
+
+func (userCtl UserControl) AddAddress(c *gin.Context) {
 	var address = new(models.Address)
 	var err error
 
 	if err = c.ShouldBind(address); nil == err {
-		models.User{}.Update(bson.M{"address.id":address.ID,bson.M{"$set":bson.M{"province":,"city":,"county":,"street"}}})
+		address.ID = bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))
+		err = models.User{}.Update(bson.M{"_id": address.ID}, bson.M{"$push": bson.M{"address": address}})
+	} else {
+		err = &util.GError{Code: 0, Err: "数据完整性错误"}
 	}
-	util.JSON(c, util.ResponseMesage{Message: "密码修改", Data: nil, Error: err})
+	util.JSON(c, util.ResponseMesage{Message: "新增收获地址", Data: nil, Error: err})
+}
+
+func (userCtl UserControl) DeleteAddress(c *gin.Context) {
+	var err error
+	var id = c.Query("id")
+
+	if "" != id {
+
+		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))}, bson.M{"$pull": bson.M{"address": bson.M{"_id": bson.ObjectIdHex(id)}}})
+	} else {
+		err = &util.GError{Code: 0, Err: "数据完整性错误"}
+	}
+	fmt.Println("rmove", err)
+	util.JSON(c, util.ResponseMesage{Message: "删除收获地址", Data: nil, Error: err})
 
 }

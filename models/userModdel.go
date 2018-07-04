@@ -15,11 +15,11 @@ const (
 
 type Address struct {
 	ID       bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
-	Province string        `json:"province" form:"province" query:"province" bson:"province"`
-	City     string        `json:"city" form:"city" query:"city" bson:"city"`
-	County   string        `json:"county" form:"county" query:"county" bson:"county"`
-	Street   string        `json:"street" form:"street" query:"street" bson:"street"`
-	Default  bool          `json:"default" form:"default" query:"default" bson:"default"`
+	Province string        `json:"province" form:"province" query:"province" bson:"province" binding:"required"`
+	City     string        `json:"city" form:"city" query:"city" bson:"city" binding:"required"`
+	County   string        `json:"county" form:"county" query:"county" bson:"county" binding:"required"`
+	Street   string        `json:"street" form:"street" query:"street" bson:"street" binding:"required"`
+	Default  bool          `json:"default" form:"default" query:"default" bson:"default" binding:"-"`
 }
 
 type IDCard struct {

@@ -41,7 +41,7 @@ func (wc *WithdrawCash) Insert() error {
 					//用户表减去可用保证金
 					user.AvailableBond -= wc.Amount
 					//更新用户表的可用保证金
-					err = user.Update()
+					err = user.UpdateByID()
 					if nil != err {
 						//如果更新用户表失败,那么回滚申请提现
 						err = wc.RemoveByID()

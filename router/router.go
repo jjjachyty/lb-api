@@ -43,6 +43,11 @@ func Init(e *gin.Engine) {
 	user.GET("/applycash", controlers.UserControl{}.AllApplyCash)  //生成取现订单
 
 	user.POST("/modifypasswd", controlers.UserControl{}.ModifyPasswd)
+	/*收货地址 ----begin*/
+	user.POST("/address", controlers.UserControl{}.AddAddress)
+	user.PUT("/address", controlers.UserControl{}.UpdateAddress)
+	user.DELETE("/address", controlers.UserControl{}.DeleteAddress)
+	/*收货地址 ----end*/
 
 	user.POST("/exparticle", controlers.UserControl{}.NewExposureArticle)
 	user.PUT("/exparticle", controlers.UserControl{}.UpdateExposureArticles)
