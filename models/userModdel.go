@@ -13,6 +13,15 @@ const (
 	collectionName = "user"
 )
 
+type Address struct {
+	ID       bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	Province string        `json:"province" form:"province" query:"province" bson:"province"`
+	City     string        `json:"city" form:"city" query:"city" bson:"city"`
+	County   string        `json:"county" form:"county" query:"county" bson:"county"`
+	Street   string        `json:"street" form:"street" query:"street" bson:"street"`
+	Default  bool          `json:"default" form:"default" query:"default" bson:"default"`
+}
+
 type IDCard struct {
 	Name         string `json:"name" form:"name" query:"name"`                                                 //名字
 	Gender       string `json:"gender" form:"gender" query:"gender"`                                           //性别
@@ -37,7 +46,7 @@ type User struct {
 	IDCardValid   bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
 	Avatar        string        `json:"avatar" form:"avatar" query:"avatar"`
 	Location      string        `json:"location" form:"location" query:"location"`
-	Address       string        `json:"address" form:"address" query:"address"`
+	Address       []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
 	State         string        `json:"state" form:"state" query:"state"`                                              //用户状态
 	Bond          float64       `json:"bond" form:"bond" query:"bond"`                                                 //保证金
 	AvailableBond float64       `json:"availableBond" form:"availableBond" query:"availableBond" bson:"availableBond"` //可用保证金
@@ -67,7 +76,7 @@ func (u *User) UpdateIdCard() error {
 }
 
 // Update 修改用户信息
-func (u *User) Update() error {
+func (u *User) UpdateByID() error {
 	var updateValue bson.M
 	if "" != u.NickName { //更新基本信息
 		updateValue = bson.M{"annickname": u.AnNickName, "nickname": u.NickName, "address": u.Address, "avatar": u.Avatar}
@@ -78,6 +87,11 @@ func (u *User) Update() error {
 	}
 
 	return DB.C(collectionName).UpdateId(u.ID, bson.M{"$set": updateValue})
+}
+
+// Update 修改用户信息
+func (u User) Update(selector, update bson.M) error {
+	return DB.C(collectionName).Update(selector, update)
 }
 
 // //验证用户邮箱

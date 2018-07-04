@@ -106,8 +106,8 @@ func (userCtl UserControl) GetUserProfile(c *gin.Context) {
 	util.JSON(c, util.ResponseMesage{Message: "获取用户信息", Data: user, Error: err})
 }
 
-//Update 更新用户信息
-func (userCtl UserControl) Update(c *gin.Context) {
+//UpdateByID 更新用户信息
+func (userCtl UserControl) UpdateByID(c *gin.Context) {
 	var err error
 	var user = new(models.User)
 
@@ -115,7 +115,7 @@ func (userCtl UserControl) Update(c *gin.Context) {
 	if err = c.Bind(user); nil == err {
 		if "" != user.NickName && "" != user.AnNickName {
 			user.Avatar = avatarURL + user.ID.Hex()
-			err = user.Update()
+			err = user.UpdateByID()
 		} else {
 			err = &util.GError{Code: 0000, Err: "匿名昵称和自定义昵称不能为空"}
 		}
@@ -174,13 +174,13 @@ func (userCtl UserControl) ModifyPasswd(c *gin.Context) {
 		user.ID = bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))
 		if "" != phone { //忘记密码，从手机短信登录，无需验证原密码
 			user.Passwd = util.MD5(newPasswd)
-			err = user.Update()
+			err = user.UpdateByID()
 		} else { //需要验证原密码
 			if err = user.ValidUser(); nil == err {
 				fmt.Println("user--\n\n", user.ID.Hex())
 
 				user.Passwd = util.MD5(newPasswd)
-				err = user.Update()
+				err = user.UpdateByID()
 			} else {
 				fmt.Println("\n\n", err)
 				err = &util.GError{Code: 5000, Err: "原密码输入错误,请重新输入"}
@@ -189,6 +189,17 @@ func (userCtl UserControl) ModifyPasswd(c *gin.Context) {
 		}
 	} else {
 		err = &util.GError{Code: 5001, Err: "新密码与旧密码一致或密码格式不正确"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "密码修改", Data: nil, Error: err})
+
+}
+
+func (userCtl UserControl) UpdateByIDAddress(c *gin.Context) {
+	var address = new(models.Address)
+	var err error
+
+	if err = c.ShouldBind(address); nil == err {
+		models.User{}.Update(bson.M{"address.id":address.ID,bson.M{"$set":bson.M{"province":,"city":,"county":,"street"}}})
 	}
 	util.JSON(c, util.ResponseMesage{Message: "密码修改", Data: nil, Error: err})
 
