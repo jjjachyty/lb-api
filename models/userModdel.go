@@ -15,11 +15,12 @@ const (
 
 type Address struct {
 	ID       bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	UserName string        `json:"userName" form:"userName" query:"userName" bson:"userName" binding:"required"`
+	Phone    string        `json:"phone" form:"phone" query:"phone" bson:"phone" binding:"required"`
 	Province string        `json:"province" form:"province" query:"province" bson:"province" binding:"required"`
 	City     string        `json:"city" form:"city" query:"city" bson:"city" binding:"required"`
 	County   string        `json:"county" form:"county" query:"county" bson:"county" binding:"required"`
 	Street   string        `json:"street" form:"street" query:"street" bson:"street" binding:"required"`
-	Default  bool          `json:"default" form:"default" query:"default" bson:"default" binding:"-"`
 }
 
 type IDCard struct {
@@ -35,21 +36,22 @@ type IDCard struct {
 	IssuedBy  string `json:"issued_by" form:"issued_by" query:"issuedBy" bson:"issuedBy"`     //签发机关
 }
 type User struct {
-	ID            bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
-	UserName      string        `json:"userName" form:"userName" query:"userName"`
-	AnNickName    string        `json:"anNickName" form:"anNickName" query:"anNickName"`
-	NickName      string        `json:"nickName" form:"nickName" query:"nickName"`
-	Email         string        `json:"email" form:"email" query:"email"`
-	Passwd        string        `json:"-" form:"passwd" query:"passwd"`
-	Phone         string        `json:"phone" form:"phone" query:"phone"`
-	IDCard        *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
-	IDCardValid   bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
-	Avatar        string        `json:"avatar" form:"avatar" query:"avatar"`
-	Location      string        `json:"location" form:"location" query:"location"`
-	Address       []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
-	State         string        `json:"state" form:"state" query:"state"`                                              //用户状态
-	Bond          float64       `json:"bond" form:"bond" query:"bond"`                                                 //保证金
-	AvailableBond float64       `json:"availableBond" form:"availableBond" query:"availableBond" bson:"availableBond"` //可用保证金
+	ID             bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	UserName       string        `json:"userName" form:"userName" query:"userName"`
+	AnNickName     string        `json:"anNickName" form:"anNickName" query:"anNickName"`
+	NickName       string        `json:"nickName" form:"nickName" query:"nickName"`
+	Email          string        `json:"email" form:"email" query:"email"`
+	Passwd         string        `json:"-" form:"passwd" query:"passwd"`
+	Phone          string        `json:"phone" form:"phone" query:"phone"`
+	IDCard         *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
+	IDCardValid    bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
+	Avatar         string        `json:"avatar" form:"avatar" query:"avatar"`
+	Location       string        `json:"location" form:"location" query:"location"`
+	Address        []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
+	DefaultAddress string        `json:"defaultAddress" form:"defaultAddress" query:"defaultAddress" bson:"defaultAddress"`
+	State          string        `json:"state" form:"state" query:"state"`                                              //用户状态
+	Bond           float64       `json:"bond" form:"bond" query:"bond"`                                                 //保证金
+	AvailableBond  float64       `json:"availableBond" form:"availableBond" query:"availableBond" bson:"availableBond"` //可用保证金
 	// ValidCode string        `json:"validCode" form:"validCode" query:"validCode"`
 	CreateAt time.Time `json:"createAt" form:"createAt" query:"createAt"`
 }

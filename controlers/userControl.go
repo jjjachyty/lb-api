@@ -201,7 +201,7 @@ func (userCtl UserControl) UpdateAddress(c *gin.Context) {
 	if err = c.ShouldBind(address); nil == err {
 		address.ID = bson.ObjectIdHex(id)
 
-		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c)), "address._id": address.ID}, bson.M{"$set": bson.M{"address.$.province": address.Province, "address.$.city": address.City, "address.$.county": address.County, "address.$.street": address.Street}})
+		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c)), "address._id": address.ID}, bson.M{"$set": bson.M{"address.$.userName": address.UserName, "address.$.phone": address.Phone, "address.$.province": address.Province, "address.$.city": address.City, "address.$.county": address.County, "address.$.street": address.Street}})
 	} else {
 		err = &util.GError{Code: 0, Err: "数据完整性错误"}
 	}
@@ -214,12 +214,12 @@ func (userCtl UserControl) AddAddress(c *gin.Context) {
 	var err error
 
 	if err = c.ShouldBind(address); nil == err {
-		address.ID = bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))
-		err = models.User{}.Update(bson.M{"_id": address.ID}, bson.M{"$push": bson.M{"address": address}})
+		address.ID = bson.NewObjectId()
+		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))}, bson.M{"$push": bson.M{"address": address}})
 	} else {
 		err = &util.GError{Code: 0, Err: "数据完整性错误"}
 	}
-	util.JSON(c, util.ResponseMesage{Message: "新增收获地址", Data: nil, Error: err})
+	util.JSON(c, util.ResponseMesage{Message: "新增收获地址", Data: address, Error: err})
 }
 
 func (userCtl UserControl) DeleteAddress(c *gin.Context) {
@@ -234,5 +234,16 @@ func (userCtl UserControl) DeleteAddress(c *gin.Context) {
 	}
 	fmt.Println("rmove", err)
 	util.JSON(c, util.ResponseMesage{Message: "删除收获地址", Data: nil, Error: err})
+}
 
+func (userCtl UserControl) DefaultAddress(c *gin.Context) {
+	var err error
+	var id = c.PostForm("id")
+
+	if "" != id {
+		err = models.User{}.Update(bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))}, bson.M{"$set": bson.M{"defaultAddress": id}})
+	} else {
+		err = &util.GError{Code: 0, Err: "地址ID不能为空"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "设置默认地址", Data: nil, Error: err})
 }

@@ -47,6 +47,7 @@ func Init(e *gin.Engine) {
 	user.POST("/address", controlers.UserControl{}.AddAddress)
 	user.PUT("/address", controlers.UserControl{}.UpdateAddress)
 	user.DELETE("/address", controlers.UserControl{}.DeleteAddress)
+	user.POST("/defaultaddress", controlers.UserControl{}.DefaultAddress)
 	/*收货地址 ----end*/
 
 	user.POST("/exparticle", controlers.UserControl{}.NewExposureArticle)
@@ -57,6 +58,9 @@ func Init(e *gin.Engine) {
 	user.GET("/article/:id", controlers.UserControl{}.GetUserExposureArticle)
 
 	user.DELETE("/myexparticle", controlers.UserControl{}.DeleteExposureArticles)
+	/* 我的物流代购 begin*/
+	user.GET("/purchases", purchase.PurchaseControl{}.UserList)
+	/* 我的物流代购 end*/
 	//用户注册
 	api.POST("/register", controlers.UserControl{}.Register)
 	api.POST("/register/sms", controlers.SendSMS)

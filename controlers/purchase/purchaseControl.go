@@ -1,6 +1,7 @@
 package purchase
 
 import (
+	"lb-api/middlewares"
 	"lb-api/models/purchase"
 	"lb-api/util"
 
@@ -26,6 +27,15 @@ func (PurchaseControl) List(c *gin.Context) {
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})
 
 }
+func (PurchaseControl) UserList(c *gin.Context) {
+	var cond bson.M
+	userID := middlewares.GetUserIDFromToken(c)
+	cond = bson.M{"createBy": userID}
+	result, err := purchase.Purchase{}.Find("-createAt", 10, bson.M{}, cond)
+	util.JSON(c, util.ResponseMesage{Message: "获取我的代购单列表", Data: result, Error: err})
+
+}
+
 func (PurchaseControl) Get(c *gin.Context) {
 	id := c.Query("id")
 	var cond bson.M

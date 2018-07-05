@@ -28,9 +28,10 @@ type Purchase struct {
 	Location        string           `json:"location" form:"location" query:"location" bson:"location" binding:"required"` //目的地
 	CreateBy        string           `json:"createBy" form:"createBy" query:"createBy" bson:"createBy" binding:"required"` //创建人
 	Creator         string           `json:"creator" form:"creator" query:"creator" bson:"creator" binding:"required"`
-	CreatAt         time.Time        `json:"creatAt" form:"creatAt" query:"creatAt" bson:"creatAt" binding:"required"`     //创建时间
+	CreateAt        time.Time        `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"required"` //创建时间
 	UpdateAt        time.Time        `json:"updateAt" form:"updateAt" query:"updateAt" bson:"updateAt" binding:"required"` //更新时间
 	State           string           `json:"state" form:"state" query:"state" bson:"state" binding:"required"`
+	Views           int              `json:"views" form:"views" query:"views" bson:"views" binding:"-"`
 	QuotationID     bson.ObjectId    `json:"quotationID" form:"quotationID" query:"quotationID" bson:"quotationID" binding:"-"`
 	QuotationOrders []QuotationOrder `json:"quotationOrders" form:"-" query:"-" bson:"-" binding:"-"`
 }
