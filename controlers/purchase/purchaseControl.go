@@ -1,9 +1,12 @@
 package purchase
 
 import (
+	"fmt"
 	"lb-api/middlewares"
 	"lb-api/models/purchase"
 	"lb-api/util"
+	"strconv"
+	"time"
 
 	"labix.org/v2/mgo/bson"
 
@@ -59,5 +62,52 @@ func (PurchaseControl) Get(c *gin.Context) {
 		}
 	}
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})
+
+}
+
+func (PurchaseControl) Add(c *gin.Context) {
+	var err error
+	var purchase = new(purchase.Purchase)
+	if err = c.ShouldBindJSON(purchase); nil == err {
+		purchase.ID = bson.NewObjectId()
+		purchase.CreateAt = time.Now()
+		purchase.UpdateAt = purchase.CreateAt
+		purchase.State = "0"
+		purchase.CreateBy = middlewares.GetUserIDFromToken(c)
+		err = purchase.Insert()
+	}
+	fmt.Println("err", err)
+	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: purchase, Error: err})
+
+}
+
+func (PurchaseControl) Update(c *gin.Context) {
+	var err error
+	var purchases []purchase.Purchase
+	var purchaseObj = new(purchase.Purchase)
+	if err = c.ShouldBindJSON(purchaseObj); nil == err {
+		purchases, err = purchase.Purchase{}.Find("_id", 1, bson.M{}, bson.M{"_id": purchaseObj.ID})
+		if len(purchases) == 1 {
+			dbPurchase := purchases[0]
+			if dbPurchase.CreateBy == middlewares.GetUserIDFromToken(c) {
+				if "0" == dbPurchase.State {
+					var amount = 0.0
+					for _, p := range purchaseObj.Products {
+						quantity, _ := strconv.ParseFloat(strconv.Itoa(p.Quantity), 64)
+						amount += p.Price * quantity
+					}
+					err = purchase.Purchase{}.Update(bson.M{"_id": purchaseObj.ID}, bson.M{"$set": bson.M{"amount": amount, "targetLocation": purchaseObj.TargetLocation, "address": purchaseObj.Address, "content": purchaseObj.Content, "products": purchaseObj.Products, "updateAt": purchaseObj.UpdateAt}})
+				} else {
+					err = &util.GError{Code: 0, Err: "只能更新状态为[待报价]的订购单"}
+				}
+			} else {
+				err = &util.GError{Code: 0, Err: "不能操作他人代购单"}
+			}
+		} else {
+			err = &util.GError{Code: 0, Err: "该报价单不存在"}
+		}
+
+	}
+	util.JSON(c, util.ResponseMesage{Message: "更新物流代购", Data: purchaseObj, Error: err})
 
 }

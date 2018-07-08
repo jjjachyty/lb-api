@@ -14,7 +14,7 @@ const (
 )
 
 type Address struct {
-	ID       bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	ID       bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id,omitempty"`
 	UserName string        `json:"userName" form:"userName" query:"userName" bson:"userName" binding:"required"`
 	Phone    string        `json:"phone" form:"phone" query:"phone" bson:"phone" binding:"required"`
 	Province string        `json:"province" form:"province" query:"province" bson:"province" binding:"required"`

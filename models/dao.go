@@ -2,6 +2,7 @@ package models
 
 import (
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 const (
@@ -21,4 +22,20 @@ func init() {
 	if nil != err {
 		panic("127.0.0.1:27017 数据库链接失败")
 	}
+}
+
+func Find(CN string, results interface{}, sort string, limit int, selectM bson.M, condition bson.M) error {
+	// var results = make([]interface{}, 0)
+	query := DB.C(CN).Find(condition)
+	if "" != sort {
+		query = query.Sort(sort)
+	}
+	if 0 != limit {
+		query = query.Limit(limit)
+	}
+	if len(selectM) > 0 {
+		query = query.Select(selectM)
+	}
+	err := query.All(results)
+	return err
 }

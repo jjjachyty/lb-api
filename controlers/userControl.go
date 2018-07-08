@@ -247,3 +247,15 @@ func (userCtl UserControl) DefaultAddress(c *gin.Context) {
 	}
 	util.JSON(c, util.ResponseMesage{Message: "设置默认地址", Data: nil, Error: err})
 }
+
+func (userCtl UserControl) GetAddress(c *gin.Context) {
+	var users []models.User
+	var user models.User
+	var err error
+	err = models.Find("user", &users, "_id", 1, bson.M{"address": 1, "defaultAddress": 1}, bson.M{"_id": bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))})
+	fmt.Println("user", user)
+	if len(users) > 0 {
+		user = users[0]
+	}
+	util.JSON(c, util.ResponseMesage{Message: "获取用户地址", Data: user, Error: err})
+}

@@ -48,6 +48,7 @@ func Init(e *gin.Engine) {
 	user.PUT("/address", controlers.UserControl{}.UpdateAddress)
 	user.DELETE("/address", controlers.UserControl{}.DeleteAddress)
 	user.POST("/defaultaddress", controlers.UserControl{}.DefaultAddress)
+	user.GET("/address", controlers.UserControl{}.GetAddress)
 	/*收货地址 ----end*/
 
 	user.POST("/exparticle", controlers.UserControl{}.NewExposureArticle)
@@ -60,6 +61,7 @@ func Init(e *gin.Engine) {
 	user.DELETE("/myexparticle", controlers.UserControl{}.DeleteExposureArticles)
 	/* 我的物流代购 begin*/
 	user.GET("/purchases", purchase.PurchaseControl{}.UserList)
+	user.POST("/purchase", purchase.PurchaseControl{}.Add)
 	/* 我的物流代购 end*/
 	//用户注册
 	api.POST("/register", controlers.UserControl{}.Register)
@@ -89,16 +91,21 @@ func Init(e *gin.Engine) {
 
 	//物流代购
 
-	purch := api.Group("/purch")
+	// purch := user.Group("/purch")
 
-	purch.GET("/list", purchase.PurchaseControl{}.List)
-	purch.GET("/get", purchase.PurchaseControl{}.Get)
+	api.GET("/purchases", purchase.PurchaseControl{}.List)
+	api.GET("/purchase", purchase.PurchaseControl{}.Get)
+	user.PUT("/purchase", purchase.PurchaseControl{}.Update)
 
-	purch.Use(middlewares.JWT().MiddlewareFunc())
-	purch.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
-	purch.PUT("/quotation", purchase.QuotationOrderControl{}.UpdateQuotationOrder)
+	user.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
+	user.PUT("/quotation", purchase.QuotationOrderControl{}.UpdateQuotationOrder)
 
-	purch.POST("/refuse", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
+	user.POST("/refusequotation", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
+	/* 我的旅程 begin*/
+	user.GET("/journeys", purchase.JourneyControl{}.UserList)
+	user.POST("/journey", purchase.JourneyControl{}.Add)
+	user.PUT("/journey", purchase.JourneyControl{}.Update)
+	/* 我的旅程 end*/
 
 	// user.Any("/text", func(c *gin.Context) error {
 	// 	user := c.Get("user").(*jwt.Token)
