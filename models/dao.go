@@ -39,3 +39,8 @@ func Find(CN string, results interface{}, sort string, limit int, selectM bson.M
 	err := query.All(results)
 	return err
 }
+
+// Remove func 删除
+func Remove(cn string, selector bson.M) error {
+	return DB.C(cn).Remove(selector)
+}

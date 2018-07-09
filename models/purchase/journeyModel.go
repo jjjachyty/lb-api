@@ -47,7 +47,12 @@ func (Journey) Update(selector bson.M, update bson.M) error {
 	return models.DB.C(journeyCN).Update(selector, update)
 }
 
-//Update 更新代购单
-func (p *Journey) Insert() error {
-	return models.DB.C(journeyCN).Insert(p)
+//Insert func 更新代购单
+func (jy *Journey) Insert() error {
+	return models.DB.C(journeyCN).Insert(jy)
+}
+
+// Remove func 删除
+func (Journey) Remove(selector bson.M) error {
+	return models.DB.C(journeyCN).Remove(selector)
 }

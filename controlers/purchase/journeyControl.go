@@ -27,8 +27,21 @@ func (JourneyControl) List(c *gin.Context) {
 
 	result, err := purchase.Journey{}.Find(sort, 10, bson.M{}, cond)
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})
-
 }
+
+func (JourneyControl) DestinationList(c *gin.Context) {
+	sort := c.DefaultQuery("sort", "endDate")
+	destination := c.Query("destination")
+	var cond bson.M
+	if "" != destination {
+		cond = bson.M{"destination": destination, "state": "1"}
+	}
+	// cond = bson.M{"$and": []bson.M{bson.M{"state": "1"}, appCond}}
+
+	result, err := purchase.Journey{}.Find(sort, 10, bson.M{}, cond)
+	util.JSON(c, util.ResponseMesage{Message: "获取可代购列表", Data: result, Error: err})
+}
+
 func (JourneyControl) UserList(c *gin.Context) {
 	var cond bson.M
 	userID := middlewares.GetUserIDFromToken(c)
@@ -60,13 +73,25 @@ func (JourneyControl) Get(c *gin.Context) {
 func (JourneyControl) Add(c *gin.Context) {
 	var err error
 	var journey = new(purchase.Journey)
+	var journeys []purchase.Journey
 	if err = c.ShouldBind(journey); nil == err {
 		journey.ID = bson.NewObjectId()
 		journey.CreateAt = time.Now()
 		journey.UpdateAt = journey.CreateAt
-
+		journey.State = "1" //新增状态
 		journey.CreateBy = middlewares.GetUserIDFromToken(c)
-		err = journey.Insert()
+		if journey.EndDate.Before(journey.StartDate) { //检查开始结束时间
+			err = &util.GError{Code: 0, Err: "结束时间必须大于开始时间"}
+		} else {
+			//检查是否有重复的行程
+			journeys, err = purchase.Journey{}.Find("_id", 10, bson.M{}, bson.M{"endDate": bson.M{"$gt": journey.StartDate}, "state": "1"})
+			if len(journeys) == 0 {
+				err = journey.Insert()
+			} else {
+				err = &util.GError{Code: 0, Err: "与去往" + journeys[0].Destination + "的行程时间有重叠"}
+			}
+
+		}
 	}
 	fmt.Println("err", err)
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: journey, Error: err})
@@ -98,5 +123,27 @@ func (JourneyControl) Update(c *gin.Context) {
 	}
 	fmt.Println("errrrrrr", err, c.PostForm("id"))
 	util.JSON(c, util.ResponseMesage{Message: "更新我的行程", Data: journeyObj, Error: err})
+}
 
+// Delete func 删除
+func (JourneyControl) Remove(c *gin.Context) {
+	var id = c.Query("id")
+	var err error
+	var journeys []purchase.Journey
+	if bson.IsObjectIdHex(id) {
+		journeys, err = purchase.Journey{}.Find("_id", 1, bson.M{}, bson.M{"_id": bson.ObjectIdHex(id)})
+		if len(journeys) == 1 {
+			dbJourney := journeys[0]
+			if dbJourney.CreateBy == middlewares.GetUserIDFromToken(c) {
+				err = purchase.Journey{}.Remove(bson.M{"_id": bson.ObjectIdHex(id)})
+				util.Glog.Debugf("删除行程单-操作人%s-原数据%v-状态%v", dbJourney.CreateBy, dbJourney, err)
+			} else {
+				err = &util.GError{Code: 0, Err: "不能操作他人行程单"}
+			}
+		} else {
+			err = &util.GError{Code: 0, Err: "该行程不存在"}
+		}
+
+	}
+	util.JSON(c, util.ResponseMesage{Message: "删除我的行程", Data: nil, Error: err})
 }

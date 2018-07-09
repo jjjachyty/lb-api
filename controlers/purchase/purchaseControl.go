@@ -3,6 +3,7 @@ package purchase
 import (
 	"fmt"
 	"lb-api/middlewares"
+	"lb-api/models"
 	"lb-api/models/purchase"
 	"lb-api/util"
 	"strconv"
@@ -110,4 +111,33 @@ func (PurchaseControl) Update(c *gin.Context) {
 	}
 	util.JSON(c, util.ResponseMesage{Message: "更新物流代购", Data: purchaseObj, Error: err})
 
+}
+
+// Delete func 删除
+func (PurchaseControl) Remove(c *gin.Context) {
+	var id = c.Query("id")
+	var err error
+	var purchases []purchase.Purchase
+	if bson.IsObjectIdHex(id) {
+		purchases, err = purchase.Purchase{}.Find("_id", 1, bson.M{}, bson.M{"_id": bson.ObjectIdHex(id)})
+		if len(purchases) == 1 {
+			dbPurchase := purchases[0]
+			if "0" == dbPurchase.State { //待报价状态可删除
+
+				if dbPurchase.CreateBy == middlewares.GetUserIDFromToken(c) {
+					err = models.Remove("purchase", bson.M{"_id": bson.ObjectIdHex(id)})
+					util.Glog.Debugf("删除代购单-操作人%s-原数据%v-状态%v", dbPurchase.CreateBy, dbPurchase, err)
+					if nil == err { //删除成功后更新报价单
+						go purchase.QuotationOrder{}.Update(bson.M{"purchaseID": id}, bson.M{"state": "-1", "refuseReason": "该报价单已被删除"})
+					}
+				} else {
+					err = &util.GError{Code: 0, Err: "不能操作他人代购单"}
+				}
+			}
+		} else {
+			err = &util.GError{Code: 0, Err: "该代购单不存在"}
+		}
+
+	}
+	util.JSON(c, util.ResponseMesage{Message: "删除我的代购单", Data: nil, Error: err})
 }
