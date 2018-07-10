@@ -22,11 +22,11 @@ type Product struct {
 type Purchase struct {
 	ID              bson.ObjectId    `json:"id" form:"id" query:"id" bson:"_id,omitempty" binding:"-"`
 	Content         string           `json:"content" form:"content" query:"content" bson:"content" binding:"required"` //内容描述
-	Amount          float64          `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"required"`     //内容描述
+	Amount          float64          `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"exists"`       //内容描述
 	Products        []Product        `json:"products" form:"products[]" query:"products" bson:"products" binding:"required"`
 	Address         models.Address   `json:"address" form:"address" query:"address" bson:"address" binding:"required"`
-	TargetLocation  string           `json:"targetLocation" form:"targetLocation" query:"targetLocation" bson:"targetLocation" binding:"required"` //目的地
-	CreateBy        string           `json:"createBy" form:"createBy" query:"createBy" bson:"createBy" binding:"-"`                                //创建人
+	Destination     string           `json:"destination" form:"destination" query:"destination" bson:"destination" binding:"required"` //目的地
+	CreateBy        string           `json:"createBy" form:"createBy" query:"createBy" bson:"createBy" binding:"-"`                    //创建人
 	Creator         string           `json:"creator" form:"creator" query:"creator" bson:"creator" binding:"-"`
 	CreateAt        time.Time        `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"` //创建时间
 	UpdateAt        time.Time        `json:"updateAt" form:"updateAt" query:"updateAt" bson:"updateAt" binding:"-"` //更新时间

@@ -15,6 +15,14 @@ import (
 
 type QuotationOrderControl struct{}
 
+func (QuotationOrderControl) UserQuotation(c *gin.Context) {
+	var err error
+	var qos []purchase.QuotationOrder
+	qos, err = purchase.QuotationOrder{}.Find("_id", 10, bson.M{}, bson.M{"createBy": middlewares.GetUserIDFromToken(c)})
+	util.JSON(c, util.ResponseMesage{Message: "获取我的报价单", Data: qos, Error: err})
+
+}
+
 func (qoc QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 	var err error
 	qo := new(purchase.QuotationOrder)
@@ -30,10 +38,10 @@ func (qoc QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 		}
 
 		jwtData := middlewares.GetPalyloadFromToken(c)
-		qo.BuyByID = jwtData["id"].(string)
+		qo.CreateBy = jwtData["id"].(string)
 		qo.State = "1" //报价
 		qo.ID = bson.NewObjectId()
-		qo.BuyByName = jwtData["nickName"].(string)
+		qo.Creator = jwtData["nickName"].(string)
 		qo.CreateAt = time.Now().In(util.GetLocation())
 		qo.Amount += qo.Charge
 		fmt.Println("qo.CreateAt", qo.CreateAt)
@@ -70,7 +78,7 @@ func (qoc QuotationOrderControl) UpdateQuotationOrder(c *gin.Context) {
 
 		jwtData := middlewares.GetPalyloadFromToken(c)
 
-		if qo.BuyByID == jwtData["id"].(string) { //本人操作本人的报价单
+		if qo.CreateBy == jwtData["id"].(string) { //本人操作本人的报价单
 			//处理总金额
 			qo.Amount = 0
 			for _, p := range qo.Products {
@@ -143,11 +151,11 @@ func (QuotationOrderControl) canNew(qo purchase.QuotationOrder) error {
 	//检查是否已经报过价
 	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
 	if len(purchases) == 1 {
-		if qo.BuyByID != purchases[0].CreateBy {
+		if qo.CreateBy != purchases[0].CreateBy {
 			if "0" == purchases[0].State { //代价单为待报价状态
 				//检查是否重复报价
-				fmt.Println("purchaseIDs", qo.PurchaseID, "createBy", qo.BuyByID)
-				quotations, err = purchase.QuotationOrder{}.Find("_id", 0, bson.M{}, bson.M{"purchaseID": qo.PurchaseID, "buyByID": qo.BuyByID})
+				fmt.Println("purchaseIDs", qo.PurchaseID, "createBy", qo.CreateBy)
+				quotations, err = purchase.QuotationOrder{}.Find("_id", 0, bson.M{}, bson.M{"purchaseID": qo.PurchaseID, "buyByID": qo.CreateBy})
 				if len(quotations) > 0 {
 					err = &util.GError{Code: 0, Err: "已报价不能重复报价"}
 				}
@@ -173,7 +181,7 @@ func (QuotationOrderControl) canUpdate(qo purchase.QuotationOrder) error {
 	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
 
 	if len(purchases) == 1 {
-		if qo.BuyByID != purchases[0].CreateBy {
+		if qo.CreateBy != purchases[0].CreateBy {
 			if "0" != purchases[0].State { //代价单为待报价状态
 				err = &util.GError{Code: 0, Err: "该报价单非[待报价]状态"}
 			}

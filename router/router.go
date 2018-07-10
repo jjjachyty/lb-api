@@ -100,7 +100,7 @@ func Init(e *gin.Engine) {
 
 	user.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
 	user.PUT("/quotation", purchase.QuotationOrderControl{}.UpdateQuotationOrder)
-
+	user.GET("/quotations", purchase.QuotationOrderControl{}.UserQuotation)
 	user.POST("/refusequotation", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
 	/* 我的旅程 begin*/
 	user.GET("/journeys", purchase.JourneyControl{}.UserList)

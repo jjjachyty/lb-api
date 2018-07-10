@@ -22,7 +22,7 @@ func (PurchaseControl) List(c *gin.Context) {
 	var cond bson.M
 	var appCond bson.M
 	if "" != keyWords {
-		appCond = bson.M{"$or": []bson.M{bson.M{"content": bson.M{"$regex": keyWords}}, bson.M{"products.name": bson.M{"$regex": keyWords}}, bson.M{"products.describe": bson.M{"$regex": keyWords}}, bson.M{"location": bson.M{"$regex": keyWords}}}}
+		appCond = bson.M{"$or": []bson.M{bson.M{"destination": bson.M{"$regex": keyWords}}, bson.M{"content": bson.M{"$regex": keyWords}}, bson.M{"products.name": bson.M{"$regex": keyWords}}, bson.M{"products.describe": bson.M{"$regex": keyWords}}, bson.M{"location": bson.M{"$regex": keyWords}}}}
 
 	}
 	cond = bson.M{"$and": []bson.M{bson.M{"state": "0"}, appCond}}
@@ -97,7 +97,7 @@ func (PurchaseControl) Update(c *gin.Context) {
 						quantity, _ := strconv.ParseFloat(strconv.Itoa(p.Quantity), 64)
 						amount += p.Price * quantity
 					}
-					err = purchase.Purchase{}.Update(bson.M{"_id": purchaseObj.ID}, bson.M{"$set": bson.M{"amount": amount, "targetLocation": purchaseObj.TargetLocation, "address": purchaseObj.Address, "content": purchaseObj.Content, "products": purchaseObj.Products, "updateAt": purchaseObj.UpdateAt}})
+					err = purchase.Purchase{}.Update(bson.M{"_id": purchaseObj.ID}, bson.M{"$set": bson.M{"amount": amount, "destination": purchaseObj.Destination, "address": purchaseObj.Address, "content": purchaseObj.Content, "products": purchaseObj.Products, "updateAt": purchaseObj.UpdateAt}})
 				} else {
 					err = &util.GError{Code: 0, Err: "只能更新状态为[待报价]的订购单"}
 				}

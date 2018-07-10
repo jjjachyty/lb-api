@@ -28,11 +28,11 @@ type QuotationOrder struct {
 	Amount       float64       `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"-"`                        //总金额
 	Products     []Product     `json:"products" form:"products[]" query:"products[]" bson:"products" binding:"checkProducts"`
 	Charge       float64       `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"required"`                  //服务费
-	BuyByID      string        `json:"buyByID" form:"buyByID" query:"buyByID" bson:"buyByID" binding:"-"`                     //报价人ID
-	BuyByName    string        `json:"buyByName" form:"buyByName" query:"buyByName" bson:"buyByName" binding:"-"`             //报价人昵称
+	CreateBy     string        `json:"createBy" form:"createBy" query:"createBy" bson:"createBy" binding:"-"`                 //报价人ID
+	Creator      string        `json:"creator" form:"creator" query:"creator" bson:"creator" binding:"-"`                     //报价人昵称
 	CreateAt     time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`                        //报价时间
 	State        string        `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                             //报价单状态
-	ReasonType   string         `json:"reasonType" form:"reasonType" query:"reasonType" bson:"reasonType" binding:"-"`                             //拒绝原因
+	ReasonType   string        `json:"reasonType" form:"reasonType" query:"reasonType" bson:"reasonType" binding:"-"`         //拒绝原因
 	RefuseReason string        `json:"refuseReason" form:"refuseReason" query:"refuseReason" bson:"refuseReason" binding:"-"` //拒绝理由
 	ExpiryTime   DayTime       `json:"expiryTime" form:"-" query:"expiryTime" bson:"expiryTime" binding:"required"`           //失效时间
 	DeliveryTime Date          `json:"deliveryTime" form:"-" query:"deliveryTime" bson:"deliveryTime" binding:"required"`     //失效时间
