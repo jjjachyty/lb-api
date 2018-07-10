@@ -63,7 +63,7 @@ func (qoc QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 		}
 	}
 	// }
-	util.JSON(c, util.ResponseMesage{Message: "新增报价单", Data: nil, Error: err})
+	util.JSON(c, util.ResponseMesage{Message: "新增报价单", Data: qo, Error: err})
 
 }
 
