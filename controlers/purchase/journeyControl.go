@@ -32,14 +32,19 @@ func (JourneyControl) List(c *gin.Context) {
 func (JourneyControl) DestinationList(c *gin.Context) {
 	sort := c.DefaultQuery("sort", "endDate")
 	destination := c.Query("destination")
+	user := c.Query("user")
 	var cond bson.M
 	if "" != destination {
 		cond = bson.M{"destination": destination, "state": "1"}
+		if "" != user {
+			cond["createBy"] = bson.M{"$ne": user}
+		}
+
 	}
 	// cond = bson.M{"$and": []bson.M{bson.M{"state": "1"}, appCond}}
 
 	result, err := purchase.Journey{}.Find(sort, 10, bson.M{}, cond)
-	util.JSON(c, util.ResponseMesage{Message: "获取可代购列表", Data: result, Error: err})
+	util.JSON(c, util.ResponseMesage{Message: "获取可代购推荐", Data: result, Error: err})
 }
 
 func (JourneyControl) UserList(c *gin.Context) {

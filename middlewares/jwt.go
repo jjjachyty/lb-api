@@ -76,8 +76,11 @@ func JWT() *jwt.GinJWTMiddleware {
 }
 
 func GetUserIDFromToken(c *gin.Context) string {
-	fmt.Println("JWT---", jwt.ExtractClaims(c))
-	return jwt.ExtractClaims(c)["id"].(string)
+	id := jwt.ExtractClaims(c)["id"]
+	if nil != id {
+		return id.(string)
+	}
+	return ""
 }
 func GetPalyloadFromToken(c *gin.Context) map[string]interface{} {
 	fmt.Println("JWT---", jwt.ExtractClaims(c))

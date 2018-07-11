@@ -96,6 +96,7 @@ func Init(e *gin.Engine) {
 	api.GET("/purchases", purchase.PurchaseControl{}.List)
 	api.GET("/purchase", purchase.PurchaseControl{}.Get)
 	user.PUT("/purchase", purchase.PurchaseControl{}.Update)
+	user.POST("/invitation", purchase.PurchaseControl{}.Invitation)
 	user.DELETE("/purchase", purchase.PurchaseControl{}.Remove)
 
 	user.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
@@ -108,7 +109,9 @@ func Init(e *gin.Engine) {
 	user.PUT("/journey", purchase.JourneyControl{}.Update)
 	user.DELETE("/journey", purchase.JourneyControl{}.Remove)
 
-	api.GET("/destination", purchase.JourneyControl{}.DestinationList)
+	api.GET("/destinationuser", purchase.JourneyControl{}.DestinationList)
+	api.GET("/destinationpurchase", purchase.PurchaseControl{}.DestinationList)
+
 	/* 我的旅程 end*/
 
 	// user.Any("/text", func(c *gin.Context) error {

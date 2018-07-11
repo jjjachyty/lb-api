@@ -34,6 +34,7 @@ type Purchase struct {
 	Views           int              `json:"views" form:"views" query:"views" bson:"views" binding:"-"`
 	QuotationID     string           `json:"quotationID" form:"quotationID" query:"quotationID" bson:"quotationID" binding:"-"`
 	QuotationOrders []QuotationOrder `json:"quotationOrders" form:"-" query:"-" bson:"-" binding:"-"`
+	Inviters        []string         `json:"inviters" form:"-" query:"-" bson:"inviters" binding:"-"`
 }
 
 const (

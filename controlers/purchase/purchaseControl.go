@@ -31,6 +31,46 @@ func (PurchaseControl) List(c *gin.Context) {
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})
 
 }
+
+func (PurchaseControl) DestinationList(c *gin.Context) {
+	sort := c.DefaultQuery("sort", "endDate")
+	destination := c.Query("destination")
+	user := c.Query("user")
+	var cond bson.M
+	if "" != destination {
+		cond = bson.M{"destination": destination, "state": "1"}
+		if "" != user {
+			cond["createBy"] = bson.M{"$ne": user}
+		}
+	}
+	result, err := purchase.Purchase{}.Find(sort, 10, bson.M{"createBy": 1, "amount": 1, "products.name": 1}, cond)
+	util.JSON(c, util.ResponseMesage{Message: "获取代购推荐", Data: result, Error: err})
+}
+
+// Invitation  func 邀请代购报价
+func (PurchaseControl) Invitation(c *gin.Context) {
+	var err error
+	purchaseID := c.PostForm("purchaseID")
+	beInviter := c.PostForm("beInviter")
+	destination := c.PostForm("destination")
+	inviter := c.PostForm("inviter")
+	if "" != purchaseID && "" != destination && "" != inviter && "" != beInviter {
+		if beInviter == middlewares.GetUserIDFromToken(c) {
+			err = models.Message{ID: bson.NewObjectId(), Type: "代购邀请", From: inviter, To: beInviter, Content: fmt.Sprintf("您有一个%s<a href='#/purchase/%s'>代购</a>邀请", destination, purchaseID), CreateAt: time.Now(), State: "1"}.Insert()
+			if nil == err {
+				err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(purchaseID)}, bson.M{"$push": bson.M{"inviters": inviter}})
+			}
+		} else {
+			err = &util.GError{Code: 0, Err: "非法操作他人代购单"}
+		}
+
+	} else {
+		err = &util.GError{Code: 0, Err: "数据完整性错误"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "邀请代购", Data: nil, Error: err})
+
+}
+
 func (PurchaseControl) UserList(c *gin.Context) {
 	var cond bson.M
 	userID := middlewares.GetUserIDFromToken(c)
