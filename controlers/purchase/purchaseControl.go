@@ -169,6 +169,14 @@ func (PurchaseControl) Remove(c *gin.Context) {
 					util.Glog.Debugf("删除代购单-操作人%s-原数据%v-状态%v", dbPurchase.CreateBy, dbPurchase, err)
 					if nil == err { //删除成功后更新报价单
 						go purchase.QuotationOrder{}.Update(bson.M{"purchaseID": id}, bson.M{"state": "-1", "refuseReason": "该报价单已被删除"})
+						//删除7牛云的图片
+						go func(purchase.Purchase) {
+							var keys = make([]string, 0)
+							for _, pd := range dbPurchase.Products {
+								keys = append(keys, pd.Images)
+							}
+							middlewares.DeleteFiles("4t-purchase", keys...)
+						}(dbPurchase)
 					}
 				} else {
 					err = &util.GError{Code: 0, Err: "不能操作他人代购单"}

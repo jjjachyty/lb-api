@@ -27,7 +27,7 @@ func GetQnToken(c *gin.Context) {
 
 	if "" != tokenType {
 
-		switch(tokenType){
+		switch tokenType {
 		case "1":
 			scope = AVATAR_BUCKET_NAME + ":" + GetUserIDFromToken(c)
 		case "2":
@@ -69,5 +69,29 @@ func DeleteFile(c *gin.Context) {
 	}
 	fmt.Println("DeleteFile", bucket, key, userid, err)
 	util.JSON(c, util.ResponseMesage{Message: "删除文件", Data: nil, Error: err})
+
+}
+
+func DeleteFiles(bucket string, keys ...string) error {
+	var err error
+
+	if "" != bucket && len(keys) > 0 {
+		mac := qbox.NewMac(ACCESS_KEY, SECRET_KEY)
+		cfg := storage.Config{
+			// 是否使用https域名进行资源管理
+			UseHTTPS: false,
+		}
+		// 指定空间所在的区域，如果不指定将自动探测
+		// 如果没有特殊需求，默认不需要指定
+		//cfg.Zone=&storage.ZoneHuabei
+
+		bucketManager := storage.NewBucketManager(mac, &cfg)
+		for _, key := range keys {
+			err = bucketManager.Delete(bucket, key)
+		}
+		util.Glog.Debugf("批量删除图片-bucket%s-keys%v-状态%v", bucket, keys, err)
+
+	}
+	return err
 
 }

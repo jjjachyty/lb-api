@@ -24,7 +24,7 @@ type ExposureArticle struct {
 	Tags            []string      `json:"tags" form:"tags[]" query:"tags"  bson:"tags" binding:"checkTags"`                                                                           //标签
 	OccurrenceDate  time.Time     `json:"occurrenceDate" form:"occurrenceDate" query:"occurrenceDate" bson:"occurrenceDate" time_format:"2006-01-02" time_utc:"1" binding:"required"` //发生时间
 	Location        string        `json:"location" form:"location" query:"location" bson:"location" binding:"required"`                                                               //发生地
-	Taget           string        `json:"taget" form:"taget" query:"taget" bson:"taget" binding:"required"`                                                                           //涉事对象
+	Domain          string        `json:"domain" form:"taget" query:"domain" bson:"domain" binding:"required"`                                                                        //涉事对象
 	Wastage         string        `json:"wastage" form:"wastage" query:"wastage" bson:"wastage" binding:"required"`                                                                   //损失
 	Content         string        `json:"content" form:"content" query:"content" bson:"content" binding:"required"`                                                                   //文章内容
 	State           string        `json:"state" form:"state" query:"state" bson:"state"`                                                                                              //文章状态
@@ -83,7 +83,7 @@ func (ea *ExposureArticle) Remove(condition bson.M) error {
 
 //更新文章
 func (ea *ExposureArticle) Update() error {
-	return DB.C(exposureArticleCN).UpdateId(ea.ID, bson.M{"$set": bson.M{"title": ea.Title, "tags": ea.Tags, "occurrenceDate": ea.OccurrenceDate, "location": ea.Location, "taget": ea.Taget, "wastage": ea.Wastage, "content": ea.Content, "state": "0", "updateAt": time.Now()}})
+	return DB.C(exposureArticleCN).UpdateId(ea.ID, bson.M{"$set": bson.M{"title": ea.Title, "tags": ea.Tags, "occurrenceDate": ea.OccurrenceDate, "location": ea.Location, "taget": ea.Domain, "wastage": ea.Wastage, "content": ea.Content, "state": "0", "updateAt": time.Now()}})
 }
 
 //更新文章
