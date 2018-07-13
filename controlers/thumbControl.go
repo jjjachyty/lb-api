@@ -69,9 +69,9 @@ func (ThumbsUpControl) List(c *gin.Context) {
 	var tb = new(models.Thumb)
 	var ths []models.Thumb
 	if err = c.ShouldBind(tb); nil == err {
-		tb.By = middlewares.GetUserIDFromToken(c)
+		// tb.By = middlewares.GetUserIDFromToken(c)
 
-		ths, err = models.Thumb{}.Find(bson.M{"articleID": tb.ArticleID, "by": tb.By})
+		ths, err = models.Thumb{}.Find(bson.M{"articleID": tb.ArticleID})
 
 	}
 	util.JSON(c, util.ResponseMesage{Message: "获取点赞", Data: ths, Error: err})

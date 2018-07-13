@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"lb-api/controlers"
+	"lb-api/controlers/order"
 	"lb-api/controlers/purchase"
 	"lb-api/middlewares"
 
@@ -22,13 +23,16 @@ func Init(e *gin.Engine) {
 	api.GET("/captcha/:id", controlers.Captcha)
 	api.GET("/avatars", controlers.AvatarList)
 	//用户登陆
-	api.POST("/login", middlewares.JWT().LoginHandler)
-	api.POST("/refresh_token", middlewares.JWT().RefreshHandler)
+	authMiddleware := middlewares.JWT()
+	api.POST("/login", authMiddleware.LoginHandler)
+
 	// api.POST("/emailvalid", controlers.ValidEmail)
 
 	user := api.Group("/user")
+	//重新获取token
+	user.Use(authMiddleware.MiddlewareFunc())
+	user.GET("/refreshtoken", authMiddleware.RefreshHandler)
 
-	user.Use(middlewares.JWT().MiddlewareFunc())
 	//用户实名认证
 	user.POST("/scanidcard", controlers.UserControl{}.IDCardOCR)
 	user.POST("/valididcard", controlers.UserControl{}.ValidIDCard)
@@ -79,7 +83,7 @@ func Init(e *gin.Engine) {
 	api.GET("/hotcomments", controlers.CommentControl{}.HotList)
 
 	user.POST("/thumbup", controlers.ThumbsUpControl{}.UP)
-	user.GET("/thumbups", controlers.ThumbsUpControl{}.List)
+	api.GET("/thumbups", controlers.ThumbsUpControl{}.List)
 	user.GET("/uptoken", middlewares.GetQnToken)
 	user.DELETE("/images", middlewares.DeleteFile)
 
@@ -113,7 +117,9 @@ func Init(e *gin.Engine) {
 	api.GET("/destinationpurchase", purchase.PurchaseControl{}.DestinationList)
 
 	/* 我的旅程 end*/
-
+	/* 我的订单 begin*/
+	user.GET("/orders", order.OrderControl{}.List)
+	/* 我的订单 end*/
 	// user.Any("/text", func(c *gin.Context) error {
 	// 	user := c.Get("user").(*jwt.Token)
 	// 	claims := user.Claims.(*util.JwtCustomClaims)
