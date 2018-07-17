@@ -41,11 +41,11 @@ const (
 	purchaseCN = "purchase"
 )
 
-func (Purchase) Find(sort string, limit int, selectM bson.M, condition bson.M) ([]Purchase, error) {
+func (Purchase) Find(sort []string, limit int, selectM bson.M, condition bson.M) ([]Purchase, error) {
 	var purchase = make([]Purchase, 0)
 	query := models.DB.C(purchaseCN).Find(condition)
-	if "" != sort {
-		query = query.Sort(sort)
+	if len(sort) > 0 {
+		query = query.Sort(sort...)
 	}
 	if 0 != limit {
 		query = query.Limit(limit)

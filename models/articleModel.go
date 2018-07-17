@@ -24,7 +24,7 @@ type ExposureArticle struct {
 	Tags            []string      `json:"tags" form:"tags[]" query:"tags"  bson:"tags" binding:"checkTags"`                                                                           //标签
 	OccurrenceDate  time.Time     `json:"occurrenceDate" form:"occurrenceDate" query:"occurrenceDate" bson:"occurrenceDate" time_format:"2006-01-02" time_utc:"1" binding:"required"` //发生时间
 	Location        string        `json:"location" form:"location" query:"location" bson:"location" binding:"required"`                                                               //发生地
-	Domain          string        `json:"domain" form:"taget" query:"domain" bson:"domain" binding:"required"`                                                                        //涉事对象
+	Domain          string        `json:"domain" form:"domain" query:"domain" bson:"domain" binding:"required"`                                                                       //涉事对象
 	Wastage         string        `json:"wastage" form:"wastage" query:"wastage" bson:"wastage" binding:"required"`                                                                   //损失
 	Content         string        `json:"content" form:"content" query:"content" bson:"content" binding:"required"`                                                                   //文章内容
 	State           string        `json:"state" form:"state" query:"state" bson:"state"`                                                                                              //文章状态

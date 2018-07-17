@@ -121,7 +121,7 @@ func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
 	allowRepeat := c.PostForm("allowRepeat")
 	if "" != quotationID && bson.IsObjectIdHex(purchaseID) && "" != refuseReason && "" != allowRepeat && "" != reasonType {
 		//验证是否是本人操作自己的代购单
-		purchs, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(purchaseID), "createBy": middlewares.GetUserIDFromToken(c)})
+		purchs, err = purchase.Purchase{}.Find([]string{"_id"}, 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(purchaseID), "createBy": middlewares.GetUserIDFromToken(c)})
 		if len(purchs) == 1 { //是本人操作
 			//更新代购单和报价单
 			util.Glog.Debugf("代购单%s拒绝报价单%s,拒绝理由%s,运行再次报价%s", purchaseID, quotationID, refuseReason, allowRepeat)
@@ -149,7 +149,7 @@ func (QuotationOrderControl) canNew(qo purchase.QuotationOrder) error {
 	var quotations []purchase.QuotationOrder
 	//检查报价单是否能报价
 	//检查是否已经报过价
-	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
+	purchases, err = purchase.Purchase{}.Find([]string{"_id"}, 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
 	if len(purchases) == 1 {
 		if qo.CreateBy != purchases[0].CreateBy {
 			if "0" == purchases[0].State { //代价单为待报价状态
@@ -178,7 +178,7 @@ func (QuotationOrderControl) canUpdate(qo purchase.QuotationOrder) error {
 	var purchases []purchase.Purchase
 	//检查报价单是否能报价
 	//检查是否已经报过价
-	purchases, err = purchase.Purchase{}.Find("_id", 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
+	purchases, err = purchase.Purchase{}.Find([]string{"_id"}, 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)})
 
 	if len(purchases) == 1 {
 		if qo.CreateBy != purchases[0].CreateBy {
