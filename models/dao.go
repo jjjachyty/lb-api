@@ -44,3 +44,8 @@ func Find(CN string, results interface{}, sort string, limit int, selectM bson.M
 func Remove(cn string, selector bson.M) error {
 	return DB.C(cn).Remove(selector)
 }
+
+//Update 更新代购单
+func Update(cn string, selector bson.M, update bson.M) error {
+	return DB.C(cn).Update(selector, update)
+}

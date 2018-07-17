@@ -16,6 +16,7 @@ var (
 	AVATAR_BUCKET_NAME   = "luobo"
 	ARTICLE_BUCKET_NAME  = "luobo-article"
 	PURCHASE_BUCKET_NAME = "4t-purchase"
+	ORDERS_BUCKET_NAME   = "orders"
 )
 
 //获取骑牛云上传key
@@ -34,6 +35,8 @@ func GetQnToken(c *gin.Context) {
 			scope = ARTICLE_BUCKET_NAME
 		case "3":
 			scope = PURCHASE_BUCKET_NAME
+		case "4":
+			scope = ORDERS_BUCKET_NAME
 		}
 
 		putPolicy := storage.PutPolicy{
