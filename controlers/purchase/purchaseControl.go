@@ -17,7 +17,7 @@ import (
 type PurchaseControl struct{}
 
 func (PurchaseControl) List(c *gin.Context) {
-	sort := c.DefaultQuery("sort", "-updateAt")
+	sort := []string{"state", "-updateAt"}
 	keyWords := c.Query("keyWords")
 	var cond bson.M
 	var appCond bson.M
@@ -25,7 +25,7 @@ func (PurchaseControl) List(c *gin.Context) {
 		appCond = bson.M{"$or": []bson.M{bson.M{"destination": bson.M{"$regex": keyWords}}, bson.M{"content": bson.M{"$regex": keyWords}}, bson.M{"products.name": bson.M{"$regex": keyWords}}, bson.M{"products.describe": bson.M{"$regex": keyWords}}, bson.M{"location": bson.M{"$regex": keyWords}}}}
 
 	}
-	cond = bson.M{"$and": []bson.M{bson.M{"state": "0"}, appCond}}
+	cond = bson.M{"$and": []bson.M{bson.M{"$or": []bson.M{bson.M{"state": "0"}, bson.M{"state": "1"}}}, appCond}}
 
 	result, err := purchase.Purchase{}.Find(sort, 10, bson.M{}, cond)
 	util.JSON(c, util.ResponseMesage{Message: "获取物流代购列表", Data: result, Error: err})
@@ -35,6 +35,7 @@ func (PurchaseControl) List(c *gin.Context) {
 func (PurchaseControl) DestinationList(c *gin.Context) {
 	sort := c.DefaultQuery("sort", "endDate")
 	destination := c.Query("destination")
+	id := c.Query("id")
 	user := c.Query("user")
 	var cond bson.M
 	if "" != destination {
@@ -42,8 +43,11 @@ func (PurchaseControl) DestinationList(c *gin.Context) {
 		if "" != user {
 			cond["createBy"] = bson.M{"$ne": user}
 		}
+		if "" != user {
+			cond["_id"] = bson.M{"$ne": bson.ObjectIdHex(id)}
+		}
 	}
-	result, err := purchase.Purchase{}.Find(sort, 10, bson.M{"createBy": 1, "amount": 1, "products.name": 1}, cond)
+	result, err := purchase.Purchase{}.Find([]string{sort}, 10, bson.M{"createBy": 1, "amount": 1, "products.name": 1}, cond)
 	util.JSON(c, util.ResponseMesage{Message: "获取代购推荐", Data: result, Error: err})
 }
 
@@ -75,7 +79,7 @@ func (PurchaseControl) UserList(c *gin.Context) {
 	var cond bson.M
 	userID := middlewares.GetUserIDFromToken(c)
 	cond = bson.M{"createBy": userID}
-	result, err := purchase.Purchase{}.Find("-createAt", 10, bson.M{}, cond)
+	result, err := purchase.Purchase{}.Find([]string{"-createAt"}, 10, bson.M{}, cond)
 	util.JSON(c, util.ResponseMesage{Message: "获取我的代购单列表", Data: result, Error: err})
 
 }
@@ -91,7 +95,7 @@ func (PurchaseControl) Get(c *gin.Context) {
 	if "" != id {
 		cond = bson.M{"_id": bson.ObjectIdHex(id)}
 
-		results, err = purchase.Purchase{}.Find("_id", 10, bson.M{}, cond)
+		results, err = purchase.Purchase{}.Find([]string{"_id"}, 10, bson.M{}, cond)
 		if len(results) > 0 {
 			result = results[0]
 			//查询报价单
@@ -127,7 +131,7 @@ func (PurchaseControl) Update(c *gin.Context) {
 	var purchases []purchase.Purchase
 	var purchaseObj = new(purchase.Purchase)
 	if err = c.ShouldBindJSON(purchaseObj); nil == err {
-		purchases, err = purchase.Purchase{}.Find("_id", 1, bson.M{}, bson.M{"_id": purchaseObj.ID})
+		purchases, err = purchase.Purchase{}.Find([]string{"_id"}, 1, bson.M{}, bson.M{"_id": purchaseObj.ID})
 		if len(purchases) == 1 {
 			dbPurchase := purchases[0]
 			if dbPurchase.CreateBy == middlewares.GetUserIDFromToken(c) {
@@ -159,7 +163,7 @@ func (PurchaseControl) Remove(c *gin.Context) {
 	var err error
 	var purchases []purchase.Purchase
 	if bson.IsObjectIdHex(id) {
-		purchases, err = purchase.Purchase{}.Find("_id", 1, bson.M{}, bson.M{"_id": bson.ObjectIdHex(id)})
+		purchases, err = purchase.Purchase{}.Find([]string{"_id"}, 1, bson.M{}, bson.M{"_id": bson.ObjectIdHex(id)})
 		if len(purchases) == 1 {
 			dbPurchase := purchases[0]
 			if "0" == dbPurchase.State { //待报价状态可删除

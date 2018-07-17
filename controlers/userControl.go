@@ -171,7 +171,7 @@ func (userCtl UserControl) ModifyPasswd(c *gin.Context) {
 	if orgPasswd != newPasswd && regexp.MustCompile(`^[A-Za-z\d]{8,16}$`).MatchString(newPasswd) {
 		//user.Phone = tokenInfo.Phone
 		user.Passwd = orgPasswd
-		user.ID = bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))
+		user.Phone = middlewares.GetPalyloadFromToken(c)["phone"].(string)
 		if "" != phone { //忘记密码，从手机短信登录，无需验证原密码
 			user.Passwd = util.MD5(newPasswd)
 			err = user.UpdateByID()
