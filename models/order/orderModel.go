@@ -35,17 +35,17 @@ type Order struct {
 
 	Seller Seller `json:"seller" form:"seller" query:"seller" bson:"seller" binding:"-"`
 	// SellAmount       float64       `json:"sellAmount" form:"sellAmount" query:"sellAmount" bson:"sellAmount" binding:"required"`
-	OriginalLink  string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
-	Products      []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
-	Type          string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
-	StrikePrice   float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
-	Charge        float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"-"` //服务费
-	Ticket        string             `json:"ticket" form:"ticket" query:"ticket" bson:"ticket" binding:"-"`
-	TicketExplain string             `json:"ticketExplain" form:"ticketExplain" query:"ticketExplain" bson:"ticketExplain" binding:"-"`
-	Express       Express            `json:"express" form:"express" query:"express" bson:"express" binding:"-"`
-	Reviews       string             `json:"reviews" form:"reviews" query:"reviews" bson:"reviews" binding:"-"`
-	ReturnReason  string             `json:"returnReason" form:"returnReason" query:"returnReason" bson:"returnReason" binding:"-"` //退货原因
-	ReturnTicket  string             `json:"returnTicket" form:"returnTicket" query:"returnTicket" bson:"returnTicket" binding:"-"` //退货原因
+	OriginalLink     string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
+	Products         []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
+	Type             string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
+	StrikePrice      float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
+	Charge           float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"-"` //服务费
+	BuyTicket        string             `json:"buyTicket" form:"buyTicket" query:"buyTicket" bson:"buyTicket" binding:"-"`
+	BuyTicketExplain string             `json:"buyTicketExplain" form:"buyTicketExplain" query:"buyTicketExplain" bson:"buyTicketExplain" binding:"-"`
+	Express          Express            `json:"express" form:"express" query:"express" bson:"express" binding:"-"`
+	Reviews          string             `json:"reviews" form:"reviews" query:"reviews" bson:"reviews" binding:"-"`
+	ReturnReason     string             `json:"returnReason" form:"returnReason" query:"returnReason" bson:"returnReason" binding:"-"` //退货原因
+	ReturnTicket     string             `json:"returnTicket" form:"returnTicket" query:"returnTicket" bson:"returnTicket" binding:"-"` //退货原因
 
 	CancelReason string    `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
 	CreateAt     time.Time `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"`

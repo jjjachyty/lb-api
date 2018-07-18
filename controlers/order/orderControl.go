@@ -55,7 +55,7 @@ func (OrderControl) Update(c *gin.Context) {
 			err = models.Find(orderCN, &orders, "-createAt", 10, bson.M{}, bson.M{"_id": bson.ObjectIdHex(orderID)})
 			if len(orders) == 1 {
 				dbOrder = orders[0]
-
+				orderForm.Type = dbOrder.Type
 				switch currentUser { // 当前操作用户
 				case dbOrder.Buyer.ID: //买家身份
 					update, err = buyerUpdate(currentUser, orderForm)
@@ -125,16 +125,19 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 		switch order.State {
 		case "-1": //关闭订单
 			if dborder.State == "0" {
-				update = bson.M{"$set": bson.M{"state": "-1", "cancelReason": "卖家关闭订单"}}
+				update = bson.M{"$set": bson.M{"state": "-1", "cancelReason": "[卖家关闭订单]"}}
+			} else if dborder.State == "1" { //已付款，取消订单
+				update = bson.M{"$set": bson.M{"state": "-1", "cancelReason": "[卖家取消订单]" + order.CancelReason}}
 			} else {
-				err = &util.GError{Code: -1, Err: "只能关闭[待付款]的订单"}
+				err = &util.GError{Code: -1, Err: "只能关闭[待付款]和[待购买]的订单"}
 			}
 		case "0": //修改价格
 			if dborder.State == "0" {
-				if order.StrikePrice > 0 { //修改价格
-					update = bson.M{"$set": bson.M{"strikePrice": order.StrikePrice}}
+				if order.Charge >= 0 { //修改价格
+					productAMount := dborder.StrikePrice - dborder.Charge
+					update = bson.M{"$set": bson.M{"charge": order.Charge, "strikePrice": productAMount + order.Charge}}
 				} else {
-					err = &util.GError{Code: -1, Err: "价格需大于0"}
+					err = &util.GError{Code: -1, Err: "代购费需大于等于0"}
 				}
 			} else {
 				err = &util.GError{Code: -1, Err: "只能修改[待付款]的价格"}
