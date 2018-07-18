@@ -38,7 +38,7 @@ func (CommentControl) Add(c *gin.Context) {
 					err := models.ExposureArticle{ID: expArts[0].ID}.UpdateCond(bson.M{"$set": bson.M{"comments": expArts[0].Comments}})
 					util.Glog.Debugf("新增文章[%s]评论-[%v]-原评论数[%d]", expArts[0].ID, err, expArts[0].Comments)
 					go func() {
-						models.Message{ID: bson.NewObjectId(), Type: "1", To: expArts[0].CreateUser, From: ct.By, Content: "您的文章<<a href='/article/" + expArts[0].ID.Hex() + "'>" + expArts[0].Title + "</a>>收到1个评论:<br/>< <small class='grey--text'>" + ct.Content + "</small>>", CreateAt: time.Now(), State: "1"}.Insert()
+						models.Message{ID: bson.NewObjectId(), Type: "1", To: expArts[0].CreateBy, From: ct.By, Content: "您的文章<<a href='/article/" + expArts[0].ID.Hex() + "'>" + expArts[0].Title + "</a>>收到1个评论:<br/>< <small class='grey--text'>" + ct.Content + "</small>>", CreateAt: time.Now(), State: "1"}.Insert()
 					}()
 
 				} else { //评论

@@ -119,7 +119,7 @@ func Init(e *gin.Engine) {
 	/* 我的旅程 end*/
 	/* 我的订单 begin*/
 	user.GET("/orders", order.OrderControl{}.List)
-	user.PUT("/order/:id", order.OrderControl{}.List)
+	user.PUT("/order/:id", order.OrderControl{}.Update)
 
 	/* 我的订单 end*/
 	// user.Any("/text", func(c *gin.Context) error {

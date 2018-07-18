@@ -18,28 +18,38 @@ type Express struct {
 	State         string    `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                                 //快递状态
 }
 
+type Seller struct {
+	ID   string `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
+	Name string `json:"name" form:"name" query:"name" bson:"name" binding:"-"`
+}
+type Buyer struct {
+	ID   string `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
+	Name string `json:"name" form:"name" query:"name" bson:"name" binding:"-"`
+}
+
 // Order struct 订单实体
 type Order struct {
 	ID bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id,omitempty" binding:"-"`
 	// BuyAmount        float64       `json:"buyAmount" form:"buyAmount" query:"buyAmount" bson:"buyAmount" binding:"required"`
-	BuyBy string `json:"buyBy" form:"buyBy" query:"buyBy" bson:"buyBy" binding:"required"`
+	Buyer Buyer `json:"buyer" form:"buyer" query:"buyer" bson:"buyer" binding:"-"`
 
-	SellBy string `json:"sellBy" form:"sellBy" query:"sellBy" bson:"sellBy" binding:"required"`
-	Seller string `json:"seller" form:"seller" query:"seller" bson:"seller" binding:"-"`
+	Seller Seller `json:"seller" form:"seller" query:"seller" bson:"seller" binding:"-"`
 	// SellAmount       float64       `json:"sellAmount" form:"sellAmount" query:"sellAmount" bson:"sellAmount" binding:"required"`
-	OriginalLink  string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"required"`
-	Products      []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"required"`
-	Type          string             `json:"type" form:"type" query:"type" bson:"type" binding:"required"` // 订单类型、代购、转卖、旅拍
-	StrikePrice   float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"required"`
-	Charge        float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"required"` //服务费
+	OriginalLink  string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
+	Products      []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
+	Type          string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
+	StrikePrice   float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
+	Charge        float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"-"` //服务费
 	Ticket        string             `json:"ticket" form:"ticket" query:"ticket" bson:"ticket" binding:"-"`
 	TicketExplain string             `json:"ticketExplain" form:"ticketExplain" query:"ticketExplain" bson:"ticketExplain" binding:"-"`
 	Express       Express            `json:"express" form:"express" query:"express" bson:"express" binding:"-"`
 	Reviews       string             `json:"reviews" form:"reviews" query:"reviews" bson:"reviews" binding:"-"`
 	ReturnReason  string             `json:"returnReason" form:"returnReason" query:"returnReason" bson:"returnReason" binding:"-"` //退货原因
-	CancelReason  string             `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
-	CreateAt      time.Time          `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"`
-	State         string             `json:"state" form:"state" query:"state" bson:"state" binding:"-"`
+	ReturnTicket  string             `json:"returnTicket" form:"returnTicket" query:"returnTicket" bson:"returnTicket" binding:"-"` //退货原因
+
+	CancelReason string    `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
+	CreateAt     time.Time `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"`
+	State        string    `json:"state" form:"state" query:"state" bson:"state" binding:"-"`
 }
 
 const orderCN = "order"

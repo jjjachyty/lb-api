@@ -22,7 +22,7 @@ func (UserControl) NewExposureArticle(c *gin.Context) {
 		user.ID = bson.ObjectIdHex(middlewares.GetUserIDFromToken(c))
 		err = user.GetInfoByID()
 		if nil == err { //查到文章发表人
-			ea.CreateUser = user.ID.Hex()
+			ea.CreateBy = user.ID.Hex()
 			if ea.NickNamePublish { //匿名发表
 				ea.NickName = user.AnNickName
 			} else { //实名发表//自定义昵称

@@ -31,7 +31,7 @@ type ExposureArticle struct {
 	CreateAt        time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`
 	UpdateAt        time.Time     `json:"updateAt" form:"-" query:"updateAt" bson:"updateAt" binding:"-"`                                         //创建时间
 	NickNamePublish bool          `json:"nickNamePublish" form:"nickNamePublish" query:"nickNamePublish" bson:"nickNamePublish" binding:"exists"` //匿名/实名
-	CreateUser      string        `json:"createUser" form:"createUser" query:"createUser" bson:"createUser"`                                      //创建人
+	CreateBy      string        `json:"createBy" form:"createBy" query:"createBy" bson:"createBy"`                                      //创建人
 	NickName        string        `json:"nickName" form:"nickName" query:"nickName" bson:"nickName"`
 	Auditor         string        `json:"auditor" form:"auditor" query:"auditor" bson:"auditor"`                     //审核人
 	AuditOpinion    string        `json:"auditOpinion" form:"auditOpinion" query:"auditOpinion" bson:"auditOpinion"` //审核意见
