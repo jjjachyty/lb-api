@@ -18,6 +18,9 @@ type UserControl struct {
 
 var avatarURL = "http://pa7c4jxbs.bkt.clouddn.com/"
 
+//用户mgo表名
+const userCN = "user"
+
 type Register struct {
 	Phone         string `json:"phone" form:"phone" query:"phone"`
 	Passwd        string `json:"passwd" form:"passwd" query:"passwd"`
@@ -258,4 +261,20 @@ func (userCtl UserControl) GetAddress(c *gin.Context) {
 		user = users[0]
 	}
 	util.JSON(c, util.ResponseMesage{Message: "获取用户地址", Data: user, Error: err})
+}
+
+//用户介绍主页
+func (userCtl UserControl) UserProfile(c *gin.Context) {
+	userID := c.Param("id")
+	var users []models.User
+	var user models.User
+	var err error
+	if "" != userID {
+		err = models.Find(userCN, &users, "_id", 1, bson.M{}, bson.M{"_id": bson.ObjectIdHex(userID)})
+		if len(users) == 1 {
+			user = users[0]
+		}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "获取用户主页", Data: user, Error: err})
+
 }

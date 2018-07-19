@@ -39,6 +39,9 @@ func Init(e *gin.Engine) {
 	//用户设置
 	user.GET("/info", controlers.UserControl{}.GetUserInfo)
 	user.PUT("/info", controlers.UserControl{}.Update)
+	//用户介绍
+	api.GET("/profile/:id", controlers.UserControl{}.UserProfile)
+
 	//用户充值
 	user.POST("/recharge", controlers.UserControl{}.NewRecharge) //生成充值订单
 	user.GET("/recharges", controlers.UserControl{}.AllRecharge) //生成充值订单

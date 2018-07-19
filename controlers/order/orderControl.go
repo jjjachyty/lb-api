@@ -94,7 +94,7 @@ func buyerUpdate(currentUser string, order *order.Order) (update bson.M, err err
 				err = &util.GError{Code: -1, Err: "取消订单原因不能为空"}
 			}
 		case "1": //更新购买
-			if "" != order.Ticket {
+			if "" != order.BuyTicket {
 				if currentUser == order.Seller.ID {
 					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
 				} else {
@@ -143,7 +143,7 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 				err = &util.GError{Code: -1, Err: "只能修改[待付款]的价格"}
 			}
 		case "1": //更新购买
-			if "" != order.Ticket {
+			if "" != order.BuyTicketExplain {
 				if currentUser == order.Seller.ID {
 					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
 				} else {
