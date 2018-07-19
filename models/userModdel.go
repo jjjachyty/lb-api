@@ -21,6 +21,7 @@ type Address struct {
 	City     string        `json:"city" form:"city" query:"city" bson:"city" binding:"required"`
 	County   string        `json:"county" form:"county" query:"county" bson:"county" binding:"required"`
 	Street   string        `json:"street" form:"street" query:"street" bson:"street" binding:"required"`
+	Default  bool          `json:"default" form:"default" query:"default" bson:"default" binding:"required"`
 }
 
 type IDCard struct {

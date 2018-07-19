@@ -5,6 +5,7 @@ import (
 	"lb-api/models"
 	"lb-api/models/order"
 	"lb-api/util"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"labix.org/v2/mgo/bson"
@@ -88,27 +89,29 @@ func buyerUpdate(currentUser string, order *order.Order) (update bson.M, err err
 	case "1": //代购订单
 		switch order.State {
 		case "0": //待付款
-			if "" != order.CancelReason { //取消订单
-				update = bson.M{"$set": bson.M{"cancelReason": order.CancelReason, "state": "-1"}}
+			if "" != order.Buyer.CancelReason { //取消订单
+				update = bson.M{"$set": bson.M{"cancelReason": order.Buyer.CancelReason, "state": "-1"}}
 			} else {
 				err = &util.GError{Code: -1, Err: "取消订单原因不能为空"}
 			}
 		case "1": //更新购买
-			if "" != order.Ticket {
-				if currentUser == order.Seller.ID {
-					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
-				} else {
-					util.Glog.Warnf("更新订单-操作人%s-非本人操作", currentUser)
-					err = &util.GError{Code: 0, Err: "非法操作已被系统记录"}
-				}
-			} else {
-				err = &util.GError{Code: 0, Err: "上传凭证不能为空"}
-			}
+			// if "" != order.BuyTicket {
+			// 	if currentUser == order.Seller.ID {
+			// 		update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
+			// 	} else {
+			// 		util.Glog.Warnf("更新订单-操作人%s-非本人操作", currentUser)
+			// 		err = &util.GError{Code: 0, Err: "非法操作已被系统记录"}
+			// 	}
+			// } else {
+			// 	err = &util.GError{Code: 0, Err: "上传凭证不能为空"}
+			// }
 		case "2": //代发货
 		case "3": //待收货
 			//确认收货
 			update = bson.M{"$set": bson.M{"state": "4"}}
 		case "4": //已完成
+			//评价卖家
+			update = bson.M{"$set": bson.M{"buyer.reviews": order.Buyer.Reviews}}
 		case "50": //退换款
 			update = bson.M{"$set": bson.M{"state": "50"}}
 		case "51": //申请退货
@@ -124,10 +127,15 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 	case "1": //代购订单
 		switch order.State {
 		case "-1": //关闭订单
+
 			if dborder.State == "0" {
-				update = bson.M{"$set": bson.M{"state": "-1", "cancelReason": "[卖家关闭订单]"}}
+				update = bson.M{"$set": bson.M{"state": "-1", "seller.cancelReason": "[卖家关闭订单]"}}
 			} else if dborder.State == "1" { //已付款，取消订单
-				update = bson.M{"$set": bson.M{"state": "-1", "cancelReason": "[卖家取消订单]" + order.CancelReason}}
+				if "" != order.Seller.CancelReason {
+					update = bson.M{"$set": bson.M{"state": "-1", "seller.cancelReason": order.Seller.CancelReason}}
+				} else {
+					err = &util.GError{Code: -1, Err: "取消原因不能为空"}
+				}
 			} else {
 				err = &util.GError{Code: -1, Err: "只能关闭[待付款]和[待购买]的订单"}
 			}
@@ -143,25 +151,32 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 				err = &util.GError{Code: -1, Err: "只能修改[待付款]的价格"}
 			}
 		case "1": //更新购买
-			if "" != order.Ticket {
-				if currentUser == order.Seller.ID {
-					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
+			if "" != order.BuyTicket {
+				if currentUser == dborder.Seller.ID {
+					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "2", "buyTicket": order.BuyTicket, "buyTicketExplain": order.BuyTicketExplain}}
 				} else {
-					util.Glog.Warnf("更新订单-操作人%s-非本人操作", currentUser)
+					util.Glog.Warnf("更新订单-操作人%s,所属人%s-非本人操作", currentUser, dborder.Seller.ID)
 					err = &util.GError{Code: 0, Err: "非法操作已被系统记录"}
 				}
 			} else {
 				err = &util.GError{Code: 0, Err: "上传凭证不能为空"}
 			}
 		case "2": //代发货
+			update = bson.M{"$set": bson.M{"state": "3", "express.name": order.Buyer.Express.Name, "express.number": order.Buyer.Express.Number, "express.createAt": time.Now(), "express.state": "已寄出"}}
 		case "3": //待收货
 			//确认收货
-			update = bson.M{"$set": bson.M{"state": "4"}}
+
 		case "4": //已完成
-		case "50": //退换款
-			update = bson.M{"$set": bson.M{"state": "50"}}
-		case "51": //申请退货
+			//评价买家
+			update = bson.M{"$set": bson.M{"seller.reviews": order.Seller.Reviews}}
+		case "500": //拒绝退换货
+			update = bson.M{"$set": bson.M{"state": "500"}}
+		case "501": //退款
+			update = bson.M{"$set": bson.M{"state": "500"}}
+		case "510": //确认退货
 			update = bson.M{"$set": bson.M{"state": "51"}}
+		default:
+			err = &util.GError{Code: -1, Err: "未找到对应的订单操作"}
 		}
 	}
 	return update, err
