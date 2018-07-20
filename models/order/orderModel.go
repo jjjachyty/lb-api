@@ -21,12 +21,14 @@ type Express struct {
 }
 
 type Seller struct {
-	ID            string         `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
-	Name          string         `json:"name" form:"name" query:"name" bson:"name" binding:"-"`
-	Reviews       string         `json:"reviews" form:"reviews" query:"reviews" bson:"reviews" binding:"-"`
-	ReturnAddress models.Address `json:"returnAddress" form:"returnAddress" query:"returnAddress" bson:"returnAddress"`
-	CancelReason  string         `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
-	Express       Express        `json:"express" form:"express" query:"express" bson:"express" binding:"-"`                     //退货物流
+	ID               string         `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
+	Name             string         `json:"name" form:"name" query:"name" bson:"name" binding:"-"`
+	Reviews          string         `json:"reviews" form:"reviews" query:"reviews" bson:"reviews" binding:"-"`
+	ReturnAddress    models.Address `json:"returnAddress" form:"returnAddress" query:"returnAddress" bson:"returnAddress"`
+	CancelReason     string         `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
+	Express          Express        `json:"express" form:"express" query:"express" bson:"express" binding:"-"`                     //退货物流
+	BuyTicket        string         `json:"buyTicket" form:"buyTicket" query:"buyTicket" bson:"buyTicket" binding:"-"`
+	BuyTicketExplain string         `json:"buyTicketExplain" form:"buyTicketExplain" query:"buyTicketExplain" bson:"buyTicketExplain" binding:"-"`
 }
 type Buyer struct {
 	ID           string  `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
@@ -46,13 +48,11 @@ type Order struct {
 
 	Seller Seller `json:"seller" form:"seller" query:"seller" bson:"seller" binding:"-"`
 	// SellAmount       float64       `json:"sellAmount" form:"sellAmount" query:"sellAmount" bson:"sellAmount" binding:"required"`
-	OriginalLink     string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
-	Products         []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
-	Type             string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
-	StrikePrice      float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
-	Charge           float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"-"` //服务费
-	BuyTicket        string             `json:"buyTicket" form:"buyTicket" query:"buyTicket" bson:"buyTicket" binding:"-"`
-	BuyTicketExplain string             `json:"buyTicketExplain" form:"buyTicketExplain" query:"buyTicketExplain" bson:"buyTicketExplain" binding:"-"`
+	OriginalLink string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
+	Products     []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
+	Type         string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
+	StrikePrice  float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
+	Charge       float64            `json:"charge" form:"charge" query:"charge" bson:"charge" binding:"-"` //服务费
 
 	CreateAt time.Time `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"`
 	State    string    `json:"state" form:"state" query:"state" bson:"state" binding:"-"`

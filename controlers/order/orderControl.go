@@ -90,7 +90,7 @@ func buyerUpdate(currentUser string, order *order.Order) (update bson.M, err err
 		switch order.State {
 		case "0": //待付款
 			if "" != order.Buyer.CancelReason { //取消订单
-				update = bson.M{"$set": bson.M{"cancelReason": order.Buyer.CancelReason, "state": "-1"}}
+				update = bson.M{"$set": bson.M{"buyer.cancelReason": order.Buyer.CancelReason, "state": "-1"}}
 			} else {
 				err = &util.GError{Code: -1, Err: "取消订单原因不能为空"}
 			}
@@ -151,9 +151,9 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 				err = &util.GError{Code: -1, Err: "只能修改[待付款]的价格"}
 			}
 		case "1": //更新购买
-			if "" != order.BuyTicket {
-				if currentUser == dborder.Seller.ID {
-					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "2", "buyTicket": order.BuyTicket, "buyTicketExplain": order.BuyTicketExplain}}
+			if "" != order.Seller.BuyTicket {
+				if currentUser == order.Seller.ID {
+					update = bson.M{"$set": bson.M{"ticket": order.ID.Hex(), "state": "1"}}
 				} else {
 					util.Glog.Warnf("更新订单-操作人%s,所属人%s-非本人操作", currentUser, dborder.Seller.ID)
 					err = &util.GError{Code: 0, Err: "非法操作已被系统记录"}
@@ -174,7 +174,7 @@ func sellerUpdate(currentUser string, order *order.Order, dborder order.Order) (
 		case "501": //退款
 			update = bson.M{"$set": bson.M{"state": "500"}}
 		case "510": //确认退货
-			update = bson.M{"$set": bson.M{"state": "51"}}
+			update = bson.M{"$set": bson.M{"state": "510", "seller.returnAddress": order.Seller.ReturnAddress}}
 		default:
 			err = &util.GError{Code: -1, Err: "未找到对应的订单操作"}
 		}
