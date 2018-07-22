@@ -37,22 +37,23 @@ type IDCard struct {
 	IssuedBy  string `json:"issued_by" form:"issued_by" query:"issuedBy" bson:"issuedBy"`     //签发机关
 }
 type User struct {
-	ID             bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
-	UserName       string        `json:"userName" form:"userName" query:"userName"`
-	AnNickName     string        `json:"anNickName" form:"anNickName" query:"anNickName"`
-	NickName       string        `json:"nickName" form:"nickName" query:"nickName"`
-	Email          string        `json:"email" form:"email" query:"email"`
-	Passwd         string        `json:"-" form:"passwd" query:"passwd"`
-	Phone          string        `json:"phone" form:"phone" query:"phone"`
-	IDCard         *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
-	IDCardValid    bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
-	Avatar         string        `json:"avatar" form:"avatar" query:"avatar"`
-	Location       string        `json:"location" form:"location" query:"location"`
-	Address        []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
-	DefaultAddress string        `json:"defaultAddress" form:"defaultAddress" query:"defaultAddress" bson:"defaultAddress"`
-	State          string        `json:"state" form:"state" query:"state"`                                              //用户状态
-	Bond           float64       `json:"bond" form:"bond" query:"bond"`                                                 //保证金
-	AvailableBond  float64       `json:"availableBond" form:"availableBond" query:"availableBond" bson:"availableBond"` //可用保证金
+	ID              bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	UserName        string        `json:"userName" form:"userName" query:"userName"`
+	AnNickName      string        `json:"anNickName" form:"anNickName" query:"anNickName"`
+	NickName        string        `json:"nickName" form:"nickName" query:"nickName"`
+	Email           string        `json:"email" form:"email" query:"email"`
+	Passwd          string        `json:"-" form:"passwd" query:"passwd"`
+	Phone           string        `json:"phone" form:"phone" query:"phone"`
+	IDCard          *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
+	IDCardValid     bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
+	Avatar          string        `json:"avatar" form:"avatar" query:"avatar"`
+	Location        string        `json:"location" form:"location" query:"location"`
+	Address         []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
+	DefaultAddress  string        `json:"defaultAddress" form:"defaultAddress" query:"defaultAddress" bson:"defaultAddress"`
+	State           string        `json:"state" form:"state" query:"state" `                                                     //用户状态
+	TotalAmount     float64       `json:"totalAmount" form:"totalAmount" query:"totalAmount" bson:"totalAmount"`                 //总金额
+	AvailableAmount float64       `json:"availableAmount" form:"availableAmount" query:"availableAmount" bson:"availableAmount"` //保证金
+	FreezingAmount  float64       `json:"freezingAmount" form:"freezingAmount" query:"freezingAmount" bson:"freezingAmount"`     //可用保证金
 	// ValidCode string        `json:"validCode" form:"validCode" query:"validCode"`
 	CreateAt time.Time `json:"createAt" form:"createAt" query:"createAt"`
 }
@@ -83,8 +84,6 @@ func (u *User) UpdateByID() error {
 	var updateValue bson.M
 	if "" != u.NickName { //更新基本信息
 		updateValue = bson.M{"annickname": u.AnNickName, "nickname": u.NickName, "address": u.Address, "avatar": u.Avatar}
-	} else if 0 != u.AvailableBond { //更新可用保证金
-		updateValue = bson.M{"availableBond": u.AvailableBond}
 	} else if "" != u.Passwd { //修改密码
 		updateValue = bson.M{"passwd": u.Passwd}
 	}

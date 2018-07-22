@@ -59,7 +59,7 @@ func (OrderControl) Update(c *gin.Context) {
 				orderForm.Type = dbOrder.Type
 				switch currentUser { // 当前操作用户
 				case dbOrder.Buyer.ID: //买家身份
-					update, err = buyerUpdate(currentUser, orderForm)
+					update, err = buyerUpdate(currentUser, orderForm, dbOrder)
 				case dbOrder.Seller.ID: //卖家身份
 					update, err = sellerUpdate(currentUser, orderForm, dbOrder)
 				default:
@@ -84,10 +84,23 @@ func (OrderControl) Update(c *gin.Context) {
 }
 
 //buyerUpdate func买家身份更新
-func buyerUpdate(currentUser string, order *order.Order) (update bson.M, err error) {
+func buyerUpdate(currentUser string, order *order.Order, dborder order.Order) (update bson.M, err error) {
 	switch order.Type {
 	case "1": //代购订单
 		switch order.State {
+		case "-1": //关闭订单
+
+			if dborder.State == "0" {
+				update = bson.M{"$set": bson.M{"state": "-1", "buyer.cancelReason": order.Buyer.CancelReason}}
+			} else if dborder.State == "1" { //已付款，取消订单
+				if "" != order.Buyer.CancelReason {
+					update = bson.M{"$set": bson.M{"state": "-1", "buyer.cancelReason": order.Buyer.CancelReason}}
+				} else {
+					err = &util.GError{Code: -1, Err: "取消原因不能为空"}
+				}
+			} else {
+				err = &util.GError{Code: -1, Err: "只能关闭[待付款]和[待购买]的订单"}
+			}
 		case "0": //待付款
 			if "" != order.Buyer.CancelReason { //取消订单
 				update = bson.M{"$set": bson.M{"buyer.cancelReason": order.Buyer.CancelReason, "state": "-1"}}

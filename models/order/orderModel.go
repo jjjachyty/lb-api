@@ -49,6 +49,7 @@ type Order struct {
 	Seller Seller `json:"seller" form:"seller" query:"seller" bson:"seller" binding:"-"`
 	// SellAmount       float64       `json:"sellAmount" form:"sellAmount" query:"sellAmount" bson:"sellAmount" binding:"required"`
 	OriginalLink string             `json:"originalLink" form:"originalLink" query:"originalLink" bson:"originalLink" binding:"-"`
+	OriginalID   string             `json:"originalID" form:"originalID" query:"originalID" bson:"originalID" binding:"-"`
 	Products     []purchase.Product `json:"products" form:"products" query:"products" bson:"products" binding:"-"`
 	Type         string             `json:"type" form:"type" query:"type" bson:"type" binding:"-"` // 订单类型、代购、转卖、旅拍
 	StrikePrice  float64            `json:"strikePrice" form:"strikePrice" query:"strikePrice" bson:"strikePrice" binding:"-"`
@@ -59,3 +60,7 @@ type Order struct {
 }
 
 const orderCN = "order"
+
+func (o *Order) One(query interface{}) error {
+	return models.DB.C(orderCN).Find(query).One(&o)
+}

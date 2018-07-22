@@ -39,6 +39,9 @@ func Find(CN string, results interface{}, sort string, limit int, selectM bson.M
 	err := query.All(results)
 	return err
 }
+func One(CN string, id bson.ObjectId, result interface{}) error {
+	return DB.C(CN).FindId(id).One(&result)
+}
 
 // Remove func 删除
 func Remove(cn string, selector bson.M) error {
@@ -48,4 +51,10 @@ func Remove(cn string, selector bson.M) error {
 //Update 更新代购单
 func Update(cn string, selector bson.M, update bson.M) error {
 	return DB.C(cn).Update(selector, update)
+}
+
+//新增
+func Insert(cn string, docs interface{}) error {
+	// ea.OccurrenceDate = Date(time.Now())
+	return DB.C(cn).Insert(docs)
 }

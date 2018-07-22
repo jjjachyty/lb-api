@@ -46,8 +46,8 @@ func Init(e *gin.Engine) {
 	user.POST("/recharge", controlers.UserControl{}.NewRecharge) //生成充值订单
 	user.GET("/recharges", controlers.UserControl{}.AllRecharge) //生成充值订单
 	//用户取现
-	user.POST("/applycash", controlers.UserControl{}.NewApplyCash) //生成取现订单
-	user.GET("/applycash", controlers.UserControl{}.AllApplyCash)  //生成取现订单
+	// user.POST("/applycash", controlers.UserControl{}.NewApplyCash) //生成取现订单
+	// user.GET("/applycash", controlers.UserControl{}.AllApplyCash)  //生成取现订单
 
 	user.POST("/modifypasswd", controlers.UserControl{}.ModifyPasswd)
 	/*收货地址 ----begin*/
@@ -123,6 +123,13 @@ func Init(e *gin.Engine) {
 	/* 我的订单 begin*/
 	user.GET("/orders", order.OrderControl{}.List)
 	user.PUT("/order/:id", order.OrderControl{}.Update)
+	pay := api.Group("/pay")
+	wx := pay.Group("/wx")
+	wx.POST("/notifiy", middlewares.NotifyCallBack)
+	wx.Use(authMiddleware.MiddlewareFunc())
+
+	user.GET("/payment/:id", order.PaymentControl{}.CheckPay)
+	wx.POST("/get/:id", middlewares.WxPay)
 
 	/* 我的订单 end*/
 	// user.Any("/text", func(c *gin.Context) error {
