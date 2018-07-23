@@ -1,8 +1,10 @@
 package util
 
 import (
+	"crypto/aes"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 	"unsafe"
 
 	"github.com/gin-gonic/gin"
+	ecb "github.com/haowanxing/go-aes-ecb"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -50,7 +53,6 @@ func MD5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str)) // 需要加密的字符串为
 	cipherStr := h.Sum(nil)
-	fmt.Println(cipherStr)
 	return hex.EncodeToString(cipherStr) // 输出加密结果
 }
 
@@ -66,7 +68,36 @@ func RandNumber(len int) string {
 	return result
 }
 
+//生成随机字符串
+func GetRandomString(length int) string {
+	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	bytes := []byte(str)
+	result := []byte{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < length; i++ {
+		result = append(result, bytes[r.Intn(len(bytes))])
+	}
+	return string(result)
+}
 func GetLocation() *time.Location {
 	l, _ := time.LoadLocation("Asia/Chongqing")
 	return l
+}
+func AESDecrypt(crypted, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, errors.New("invalid decrypt key")
+	}
+
+	blockSize := block.BlockSize()
+	if len(crypted)%blockSize != 0 {
+		return nil, errors.New("解密数据格式错误")
+	}
+	origin, err := ecb.AesDecrypt(crypted, []byte(key)) // ECB解密
+	if err != nil {
+		return nil, err
+	}
+	// 使用PKCS#7对解密后的内容去除填充
+	origin = ecb.PKCS7UnPadding(origin)
+	return origin, nil
 }

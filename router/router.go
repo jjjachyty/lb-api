@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lb-api/controlers"
 	"lb-api/controlers/order"
+	"lb-api/controlers/pay/wx"
 	"lb-api/controlers/purchase"
 	"lb-api/middlewares"
 
@@ -124,13 +125,14 @@ func Init(e *gin.Engine) {
 	user.GET("/orders", order.OrderControl{}.List)
 	user.PUT("/order/:id", order.OrderControl{}.Update)
 	pay := api.Group("/pay")
-	wx := pay.Group("/wx")
-	wx.POST("/notifiy", middlewares.NotifyCallBack)
-	wx.Use(authMiddleware.MiddlewareFunc())
+	wxpay := pay.Group("/wx")
+	wxpay.POST("/notifiy", wx.WxPayControl{}.Notify)
+	wxpay.POST("/refund/notifiy", wx.WxRefundControl{}.Notify)
+
+	wxpay.Use(authMiddleware.MiddlewareFunc())
 
 	user.GET("/payment/:id", order.PaymentControl{}.CheckPay)
-	wx.POST("/get/:id", middlewares.WxPay)
-
+	wxpay.POST("/native/:id", wx.WxPayControl{}.Pay)
 	/* 我的订单 end*/
 	// user.Any("/text", func(c *gin.Context) error {
 	// 	user := c.Get("user").(*jwt.Token)

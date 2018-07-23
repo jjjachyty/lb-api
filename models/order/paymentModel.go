@@ -29,7 +29,7 @@ type Payment struct {
 	PayAmount   float64       `bson:"payAmount"`   //支付金额
 	// Payer      Payer
 	// Payee      Payer
-	PayType  string    `bson:"payType"` //支付、提现、转账
+	PayType  string    `bson:"payType"` //支付、提现、转账、退款
 	Order    string    `bson:"order"`   //系统订单号
 	CreateAt time.Time `bson:"createAt"`
 	PayAt    time.Time `bson:"payAt"`

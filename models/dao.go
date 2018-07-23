@@ -40,7 +40,10 @@ func Find(CN string, results interface{}, sort string, limit int, selectM bson.M
 	return err
 }
 func One(CN string, id bson.ObjectId, result interface{}) error {
-	return DB.C(CN).FindId(id).One(&result)
+	return DB.C(CN).FindId(id).One(result)
+}
+func FindOne(CN string, query, result interface{}) error {
+	return DB.C(CN).Find(query).One(result)
 }
 
 // Remove func 删除

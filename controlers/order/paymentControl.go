@@ -19,7 +19,7 @@ func (PaymentControl) CheckPay(c *gin.Context) {
 	var order = new(order.Order)
 	var orderid = c.Param("id")
 	if "" != orderid {
-		payment.One(bson.M{"order": orderid})
+		payment.One(bson.M{"order": orderid, "payType": "pay"})
 		if payment.State == "0" {
 			err = &util.GError{Code: -1, Err: "该单还未支付,请即时支付"}
 		} else {
