@@ -2,8 +2,10 @@ package purchase
 
 import (
 	"fmt"
+	"lb-api/controlers/pay/wx"
 	"lb-api/middlewares"
 	"lb-api/models"
+	"lb-api/models/order"
 	"lb-api/models/purchase"
 	"lb-api/util"
 	"strconv"
@@ -90,7 +92,7 @@ func (PurchaseControl) Get(c *gin.Context) {
 	var result purchase.Purchase
 	var results []purchase.Purchase
 
-	var qos []purchase.QuotationOrder
+	// var qos []purchase.QuotationOrder
 	var err error
 	if "" != id {
 		cond = bson.M{"_id": bson.ObjectIdHex(id)}
@@ -98,11 +100,6 @@ func (PurchaseControl) Get(c *gin.Context) {
 		results, err = purchase.Purchase{}.Find([]string{"_id"}, 10, bson.M{}, cond)
 		if len(results) > 0 {
 			result = results[0]
-			//查询报价单
-			qos, err = purchase.QuotationOrder{}.Find("-createAt", 0, bson.M{}, bson.M{"purchaseID": id})
-			if nil == err {
-				result.QuotationOrders = qos
-			}
 
 		}
 	}
@@ -130,20 +127,21 @@ func (PurchaseControl) Update(c *gin.Context) {
 	var err error
 	var purchases []purchase.Purchase
 	var purchaseObj = new(purchase.Purchase)
+
 	if err = c.ShouldBindJSON(purchaseObj); nil == err {
 		purchases, err = purchase.Purchase{}.Find([]string{"_id"}, 1, bson.M{}, bson.M{"_id": purchaseObj.ID})
 		if len(purchases) == 1 {
 			dbPurchase := purchases[0]
 			if dbPurchase.CreateBy == middlewares.GetUserIDFromToken(c) {
-				if "0" == dbPurchase.State {
+				if "0" == dbPurchase.State || "-1" == dbPurchase.State {
 					var amount = 0.0
 					for _, p := range purchaseObj.Products {
-						quantity, _ := strconv.ParseFloat(strconv.Itoa(p.Quantity), 64)
+						quantity, _ := strconv.ParseFloat(strconv.FormatInt(p.Quantity, 20), 64)
 						amount += p.Price * quantity
 					}
-					err = purchase.Purchase{}.Update(bson.M{"_id": purchaseObj.ID}, bson.M{"$set": bson.M{"amount": amount, "destination": purchaseObj.Destination, "address": purchaseObj.Address, "content": purchaseObj.Content, "products": purchaseObj.Products, "updateAt": purchaseObj.UpdateAt}})
+					err = purchase.Purchase{}.Update(bson.M{"_id": purchaseObj.ID}, bson.M{"$set": bson.M{"state": "0", "amount": amount, "destination": purchaseObj.Destination, "address": purchaseObj.Address, "content": purchaseObj.Content, "products": purchaseObj.Products, "updateAt": time.Now()}})
 				} else {
-					err = &util.GError{Code: 0, Err: "只能更新状态为[待报价]的订购单"}
+					err = &util.GError{Code: 0, Err: "只能更新状态为[待报价][逾期未处理]的订购单"}
 				}
 			} else {
 				err = &util.GError{Code: 0, Err: "不能操作他人代购单"}
@@ -153,6 +151,7 @@ func (PurchaseControl) Update(c *gin.Context) {
 		}
 
 	}
+	fmt.Println("更新报价单", err)
 	util.JSON(c, util.ResponseMesage{Message: "更新物流代购", Data: purchaseObj, Error: err})
 
 }
@@ -192,4 +191,55 @@ func (PurchaseControl) Remove(c *gin.Context) {
 
 	}
 	util.JSON(c, util.ResponseMesage{Message: "删除我的代购单", Data: nil, Error: err})
+}
+
+//选中代购单
+func (PurchaseControl) Confirm(c *gin.Context) {
+	var err error
+	var qo = new(purchase.QuotationOrder)
+	var purch = new(purchase.Purchase)
+	var userID = middlewares.GetUserIDFromToken(c)
+	var returnMsg wx.ReturnMsg
+	var orderObj = new(order.Order)
+	quotationid := c.PostForm("quotationid")
+	if bson.IsObjectIdHex(quotationid) {
+		models.One("quotation", bson.ObjectIdHex(quotationid), qo)
+		if qo.ID.Valid() { //查到报价单
+			//处理总费用
+			var totalAmount = 0.0
+			for _, pd := range qo.Products {
+				qt, _ := strconv.ParseFloat(strconv.FormatInt(pd.Quantity, 10), 64)
+				totalAmount += (pd.Price * qt)
+			}
+			totalAmount += qo.Charge
+			//查询代购单
+			models.FindOne("purchase", bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, purch)
+			if purch.ID.Valid() {
+				if purch.CreateBy == userID { //确保是本人操作
+					//更新代购单
+					err = models.Update("purchase", bson.M{"_id": purch.ID}, bson.M{"$set": bson.M{"state": "2", "quotationID": quotationid}})
+					err = models.Update("quotation", bson.M{"_id": qo.ID}, bson.M{"$set": bson.M{"state": "2"}})
+					if nil == err { //更新代购成功后，新增定价单
+						//判断是否已经存在定价单
+						models.FindOne("order", bson.M{"originalID": purch.ID.Hex()}, orderObj)
+						if !orderObj.ID.Valid() { //不存在则新增
+							var buyer = order.Buyer{ID: purch.CreateBy, Name: purch.Creator, IP: c.ClientIP(), Express: order.Express{ReceivingAddress: purch.Address}}
+							var seller = order.Seller{ID: qo.CreateBy, Name: qo.Creator}
+							orderObj = &order.Order{Buyer: buyer, Seller: seller, OriginalID: purch.ID.Hex(), ID: bson.NewObjectId(), StrikePrice: totalAmount, Charge: qo.Charge, OriginalLink: "/purchase/" + qo.PurchaseID, Type: "1", State: "0", Products: qo.Products}
+							err = models.Insert("order", orderObj)
+						}
+
+						if nil == err { //调用微信支付
+							returnMsg, err = wx.WxPayControl{}.GetWxPay(orderObj, userID)
+						}
+					}
+				} else {
+					util.Glog.Errorf("非法操作,用户%s操作被操作用户%s的代购单-IP地址", userID, qo.CreateBy, c.ClientIP())
+					err = &util.GError{Code: -1, Err: "非法操作,只能操作自己的订单,已被系统记录"}
+				}
+			}
+		}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "选定代购人,并支付代购单", Data: returnMsg, Error: err})
+
 }

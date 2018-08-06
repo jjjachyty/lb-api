@@ -3,8 +3,7 @@ package wx
 import (
 	"encoding/base64"
 	"encoding/xml"
-	"fmt"
-	"io/ioutil"
+	"lb-api/models"
 	"lb-api/models/order"
 	"lb-api/util"
 	"strconv"
@@ -20,21 +19,32 @@ type WxRefundControl struct{}
 //outTradeNo 订单号 outRefundNo系统内部订单号orderid,totalFee订单金额 refundFee退款金额
 func (WxRefundControl) Refund(outTradeNo, outRefundNo string, totalFee, refundFee int64, refundDesc string) error {
 	var refundRt = new(RefundReturn)
+	var err error
 	var returnAmount float64
 	var params = RefundParams{Appid: config.AppID, MchID: config.MchID, NonceStr: util.GetRandomString(6), NotifyURL: config.RefundNotifyURL, OutTradeNo: outTradeNo, OutRefundNo: outRefundNo, TotalFee: totalFee, RefundFee: refundFee, RefundDesc: refundDesc}
-	err := requestWxRefund(ReFundURL, &params, refundRt)
-	if nil == err { //退款申请成功
-		returnAmount, err = strconv.ParseFloat(strconv.FormatInt(params.RefundFee, 10), 64)
-		if nil == err {
-			payment := order.Payment{ID: bson.NewObjectId(), OutTradeNo: params.OutTradeNo, Order: params.OutRefundNo, PayType: "return", CreateAt: time.Now(), TradeAmount: returnAmount}
-			err = payment.Insert()
+
+	returnAmount, err = strconv.ParseFloat(strconv.FormatInt(params.RefundFee, 10), 64)
+	if nil == err {
+		payment := order.Payment{ID: bson.NewObjectId(), OutTradeNo: params.OutTradeNo, Order: params.OutRefundNo, PayType: "return", CreateAt: time.Now(), TradeAmount: returnAmount, State: "-1"}
+
+		err = requestWxRefund(ReFundURL, &params, refundRt)
+		if "SUCCESS" == refundRt.ReturnCode && "SUCCESS" == refundRt.ResultCode { //退款申请成功
+			util.Glog.Debugf("微信退款申请-申请微信退款-成功-订单号%s", payment.Order)
+
+			//修改系统订单为申请成功
+			err = models.Update("payment", bson.M{"order": outRefundNo, "payType": "return"}, bson.M{"$set": bson.M{"state": "0"}})
 			if nil != err {
-				util.Glog.Errorf("人工补偿-微信退款-新增系统退款记录-失败-信息%s-记录%v", err.Error(), payment)
+				util.Glog.Errorf("人工补偿-微信退款申请-更新支付状态为[申请中]-失败-%s", err.Error())
 			}
-		} else {
-			err = &util.GError{Code: -1, Err: "退款金额错误"}
+		} else { //退款申请失败
+			err = &util.GError{Code: -1, Err: refundRt.ReturnMsg + refundRt.ErrCodeDes}
+			util.Glog.Errorf("人工补偿-微信退款申请-申请微信退款失败-失败-%s", refundRt.ReturnMsg+refundRt.ErrCodeDes)
 		}
+
+	} else {
+		err = &util.GError{Code: -1, Err: "退款金额错误"}
 	}
+
 	return err
 }
 
@@ -44,29 +54,39 @@ func (WxRefundControl) Notify(c *gin.Context) {
 	var notifyReturn NotifyReturn
 	// var payment = new(order.Payment)
 	notify := new(RefundNotify)
+	notifyDecrypt := new(RefundNotifyDecrypt)
+	// b, _ := ioutil.ReadAll(c.Request.Body)
+	// fmt.Println("微信退款返回数据", string(b))
 
-	b, _ := ioutil.ReadAll(c.Request.Body)
-	fmt.Println("微信退款返回数据", string(b))
-
-	// if err = c.ShouldBind(notify); nil == err {
-	if err = xml.Unmarshal(b, notify); nil == err {
+	if err = c.ShouldBind(notify); nil == err {
+		// if err = xml.Unmarshal(b, notify); nil == err {
 		if notify.ReturnCode == "SUCCESS" { //成功
 			encodeString, err := base64.StdEncoding.DecodeString(notify.ReqInfo)
-			fmt.Println("微信退款BASE64解密后数据", "原来", notify.ReqInfo, "BASE64", string(encodeString))
 			md5MchKey := util.MD5(config.ApiKey)
 			reqInfo, err := util.AESDecrypt(encodeString, []byte(md5MchKey))
 			if nil == err {
-				fmt.Println("微信退款解密后数据", string(reqInfo))
+				err = xml.Unmarshal(reqInfo, notifyDecrypt)
+				if nil == err {
+					if "SUCCESS" == notifyDecrypt.RefundStatus {
+						err = models.Update("payment", bson.M{"order": notifyDecrypt.OutRefundNO, "payType": "return"}, bson.M{"$set": bson.M{"state": "1"}})
+						if nil == err { //更新订单状态为退款成功
+							err = models.Update("order", bson.M{"_id": bson.ObjectIdHex(notifyDecrypt.OutRefundNO)}, bson.M{"$set": bson.M{"state": "-11"}})
+						}
+					}
+				} else {
+					util.Glog.Errorf("微信解密后转换RefundNotifyDecrypt错误-%s", string(reqInfo))
+				}
 			} else {
-				fmt.Println("微信退款解密后数据", string(reqInfo), "错误", err.Error())
+				util.Glog.Errorf("微信解密错误-错误信息%s-%s", err.Error(), encodeString)
 			}
 
 		}
-		if nil == err {
-			notifyReturn = NotifyReturn{ReturnCode: "SUCCESS", ReturnMsg: "OK"}
-		} else {
-			notifyReturn = NotifyReturn{ReturnCode: "FAIL", ReturnMsg: err.Error()}
-		}
+
+	}
+	if nil == err {
+		notifyReturn = NotifyReturn{ReturnCode: "SUCCESS", ReturnMsg: "OK"}
+	} else {
+		notifyReturn = NotifyReturn{ReturnCode: "FAIL", ReturnMsg: err.Error()}
 	}
 	c.XML(200, notifyReturn)
 }

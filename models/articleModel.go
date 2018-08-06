@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	exposureArticleCN = "exposureArticle"
+	ArticleCN = "article"
 )
 
 type Date time.Time
@@ -31,7 +31,7 @@ type ExposureArticle struct {
 	CreateAt        time.Time     `json:"createAt" form:"-" query:"createAt" bson:"createAt" binding:"-"`
 	UpdateAt        time.Time     `json:"updateAt" form:"-" query:"updateAt" bson:"updateAt" binding:"-"`                                         //创建时间
 	NickNamePublish bool          `json:"nickNamePublish" form:"nickNamePublish" query:"nickNamePublish" bson:"nickNamePublish" binding:"exists"` //匿名/实名
-	CreateBy      string        `json:"createBy" form:"createBy" query:"createBy" bson:"createBy"`                                      //创建人
+	CreateBy        string        `json:"createBy" form:"createBy" query:"createBy" bson:"createBy"`                                              //创建人
 	NickName        string        `json:"nickName" form:"nickName" query:"nickName" bson:"nickName"`
 	Auditor         string        `json:"auditor" form:"auditor" query:"auditor" bson:"auditor"`                     //审核人
 	AuditOpinion    string        `json:"auditOpinion" form:"auditOpinion" query:"auditOpinion" bson:"auditOpinion"` //审核意见
@@ -56,14 +56,14 @@ func checkTags(v *validator.Validate, topStruct reflect.Value, currentStructOrFi
 func (ea *ExposureArticle) Insert() error {
 	// ea.OccurrenceDate = Date(time.Now())
 	fmt.Println("\n\nInsert", ea.CreateAt, ea.OccurrenceDate, ea.Tags)
-	return DB.C(exposureArticleCN).Insert(ea)
+	return DB.C(ArticleCN).Insert(ea)
 }
 
 //新增文章
 // func (ea *ExposureArticle) FindUserArticle(condition bson.M) ([]ExposureArticle, error) {
 // 	var articles = make([]ExposureArticle, 0)
 // 	//.Select(bson.M{"title": 1, "tags": 1, "occurrenceDate": 1, "location": 1, "taget": 1, "wastage": 1, "nickNamePublish": 1, "content": 1, "state": 1, "auditOpinion": 1})
-// 	err := DB.C(exposureArticleCN).Find(condition).Sort("-createAt").Limit(10).All(&articles)
+// 	err := DB.C(ArticleCN).Find(condition).Sort("-createAt").Limit(10).All(&articles)
 // 	return articles, err
 // }
 
@@ -71,24 +71,24 @@ func (ea *ExposureArticle) Insert() error {
 func (ea ExposureArticle) Find(sort string, limit int, selectM bson.M, condition bson.M) ([]ExposureArticle, error) {
 	var articles = make([]ExposureArticle, 0)
 	// Select(bson.M{"title": 1, "tags": 1, "occurrenceDate": 1, "location": 1, "taget": 1, "wastage": 1, "nickNamePublish": 1, "content": 1, "state": 1, "auditOpinion": 1})
-	err := DB.C(exposureArticleCN).Find(condition).Select(selectM).Sort(sort).Limit(limit).All(&articles)
+	err := DB.C(ArticleCN).Find(condition).Select(selectM).Sort(sort).Limit(limit).All(&articles)
 	return articles, err
 }
 
 //新增文章
 func (ea *ExposureArticle) Remove(condition bson.M) error {
-	_, err := DB.C(exposureArticleCN).RemoveAll(condition)
+	_, err := DB.C(ArticleCN).RemoveAll(condition)
 	return err
 }
 
 //更新文章
 func (ea *ExposureArticle) Update() error {
-	return DB.C(exposureArticleCN).UpdateId(ea.ID, bson.M{"$set": bson.M{"title": ea.Title, "tags": ea.Tags, "occurrenceDate": ea.OccurrenceDate, "location": ea.Location, "taget": ea.Domain, "wastage": ea.Wastage, "content": ea.Content, "state": "0", "updateAt": time.Now()}})
+	return DB.C(ArticleCN).UpdateId(ea.ID, bson.M{"$set": bson.M{"title": ea.Title, "tags": ea.Tags, "occurrenceDate": ea.OccurrenceDate, "location": ea.Location, "taget": ea.Domain, "wastage": ea.Wastage, "content": ea.Content, "state": "0", "updateAt": time.Now()}})
 }
 
 //更新文章
 func (ea ExposureArticle) UpdateCond(cond bson.M) error {
-	return DB.C(exposureArticleCN).UpdateId(ea.ID, cond)
+	return DB.C(ArticleCN).UpdateId(ea.ID, cond)
 }
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {

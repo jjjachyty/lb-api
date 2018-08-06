@@ -21,7 +21,7 @@ type Address struct {
 	City     string        `json:"city" form:"city" query:"city" bson:"city" binding:"required"`
 	County   string        `json:"county" form:"county" query:"county" bson:"county" binding:"required"`
 	Street   string        `json:"street" form:"street" query:"street" bson:"street" binding:"required"`
-	Default  bool          `json:"default" form:"default" query:"default" bson:"default" binding:"required"`
+	Default  bool          `json:"default" form:"default" query:"default" bson:"default" binding:"exists"`
 }
 
 type IDCard struct {
@@ -37,25 +37,37 @@ type IDCard struct {
 	IssuedBy  string `json:"issued_by" form:"issued_by" query:"issuedBy" bson:"issuedBy"`     //签发机关
 }
 type User struct {
+	ID             bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	UserName       string        `json:"userName" form:"userName" query:"userName"`
+	AnNickName     string        `json:"anNickName" form:"anNickName" query:"anNickName"`
+	NickName       string        `json:"nickName" form:"nickName" query:"nickName"`
+	Email          string        `json:"email" form:"email" query:"email"`
+	Passwd         string        `json:"-" form:"passwd" query:"passwd"`
+	Phone          string        `json:"phone" form:"phone" query:"phone"`
+	IDCard         *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
+	IDCardValid    bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
+	BankCards      []BankCard    `json:"bankCards" form:"bankCards[]" query:"bankCards" bson:"bankCards"`
+	Avatar         string        `json:"avatar" form:"avatar" query:"avatar" `
+	Address        []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
+	DefaultAddress string        `json:"defaultAddress" form:"defaultAddress" query:"defaultAddress" bson:"defaultAddress"`
+	State          string        `json:"state" form:"state" query:"state" ` //用户状态
+	Wallet         Wallet        `json:"wallet" form:"wallet" query:"wallet" bson:"wallet"`
+	// ValidCode string        `json:"validCode" form:"validCode" query:"validCode"`
+	CreateAt time.Time `json:"createAt" form:"createAt" query:"createAt"`
+}
+
+//银行卡
+type BankCard struct {
+	ID     bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	Name   string        `json:"name" form:"name" query:"name" bson:"name"`         //名字
+	Number string        `json:"number" form:"number" query:"number" bson:"number"` //卡号
+}
+
+type Wallet struct {
 	ID              bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
-	UserName        string        `json:"userName" form:"userName" query:"userName"`
-	AnNickName      string        `json:"anNickName" form:"anNickName" query:"anNickName"`
-	NickName        string        `json:"nickName" form:"nickName" query:"nickName"`
-	Email           string        `json:"email" form:"email" query:"email"`
-	Passwd          string        `json:"-" form:"passwd" query:"passwd"`
-	Phone           string        `json:"phone" form:"phone" query:"phone"`
-	IDCard          *IDCard       `json:"idCard" form:"idCard" query:"idCard" bson:"idCard"`
-	IDCardValid     bool          `json:"idCardValid" form:"idCardValid" query:"idCardValid"`
-	Avatar          string        `json:"avatar" form:"avatar" query:"avatar"`
-	Location        string        `json:"location" form:"location" query:"location"`
-	Address         []Address     `json:"address" form:"address[]" query:"address" bson:"address"`
-	DefaultAddress  string        `json:"defaultAddress" form:"defaultAddress" query:"defaultAddress" bson:"defaultAddress"`
-	State           string        `json:"state" form:"state" query:"state" `                                                     //用户状态
 	TotalAmount     float64       `json:"totalAmount" form:"totalAmount" query:"totalAmount" bson:"totalAmount"`                 //总金额
 	AvailableAmount float64       `json:"availableAmount" form:"availableAmount" query:"availableAmount" bson:"availableAmount"` //保证金
 	FreezingAmount  float64       `json:"freezingAmount" form:"freezingAmount" query:"freezingAmount" bson:"freezingAmount"`     //可用保证金
-	// ValidCode string        `json:"validCode" form:"validCode" query:"validCode"`
-	CreateAt time.Time `json:"createAt" form:"createAt" query:"createAt"`
 }
 
 func (u *User) ValidUser() error {

@@ -10,8 +10,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/golang/glog"
 )
 
 //统一下单URL
@@ -35,7 +33,7 @@ var config = struct {
 	MchID:           "1501291661",
 	ApiKey:          "jjjachyty929133jjjachyty92913364",
 	PayNotifyURL:    "https://www.fortravel.cn/api/v1/pay/wx/notifiy",
-	RefundNotifyURL: "https://www.fortravel.cn/api/v1/pay/wx/refundnotifiy",
+	RefundNotifyURL: "https://www.fortravel.cn/api/v1/pay/wx/refund/notifiy",
 }
 
 //回调返回信息
@@ -108,12 +106,15 @@ type RefundParams struct {
 	MchID       string `xml:"mch_id"`
 	NonceStr    string `xml:"nonce_str"`
 	NotifyURL   string `xml:"notify_url"`
-	OutTradeNo  string `xml:"out_trade_no"`
 	OutRefundNo string `xml:"out_refund_no"`
-	RefundFee   int64  `xml:"refund_fee"`
-	RefundDesc  string `xml:"refund_desc"`
-	Sign        string `xml:"sign"`
-	TotalFee    int64  `xml:"total_fee"`
+
+	OutTradeNo string `xml:"out_trade_no"`
+	RefundDesc string `xml:"refund_desc"`
+
+	RefundFee int64 `xml:"refund_fee"`
+
+	Sign     string `xml:"sign"`
+	TotalFee int64  `xml:"total_fee"`
 }
 
 //退款申请请求返回信息
@@ -132,6 +133,22 @@ type RefundNotify struct {
 	MchID      string `xml:"mch_id"`
 	NonceStr   string `xml:"nonce_str"`
 	ReqInfo    string `xml:"req_info"`
+}
+
+type RefundNotifyDecrypt struct {
+	OutRefundNO         string  `xml:"out_refund_no"`
+	OutTradeNO          string  `xml:"out_trade_no"`
+	RefundAccount       string  `xml:"refund_account"`
+	RefundFee           string  `xml:"refund_fee"`
+	RefundID            string  `xml:"refund_id"`
+	RefundRecvAccout    string  `xml:"refund_recv_accout"`
+	RefundRequestSource string  `xml:"refund_request_source"`
+	RefundStatus        string  `xml:"refund_status"`
+	SettlementRefundFee float64 `xml:"settlement_refund_fee"`
+	SettlementTotalFee  float64 `xml:"settlement_total_fee"`
+	SuccessTime         string  `xml:"success_time"`
+	TotalFee            float64 `xml:"total_fee"`
+	TransactionID       string  `xml:"transaction_id"`
 }
 
 type NotifyReturn struct {
@@ -264,7 +281,7 @@ func getTLSConfig() (*tls.Config, error) {
 	// load cert
 	cert, err := tls.LoadX509KeyPair("./controlers/pay/wx/apiclient_cert.pem", "./controlers/pay/wx/apiclient_key.pem")
 	if err != nil {
-		glog.Errorln("load wechat keys fail", err)
+		util.Glog.Errorln("load wechat keys fail", err)
 		return nil, err
 	}
 

@@ -87,12 +87,11 @@ func (WxPayControl) Notify(c *gin.Context) {
 }
 
 //获取微信支付号
-func (WxPayControl) Pay(c *gin.Context) {
+func (wxpay WxPayControl) Pay(c *gin.Context) {
 	var err error
-	var payment = new(order.Payment)
 	var dbOrder = new(order.Order)
-	var returnMsg = new(ReturnMsg)
-	var totoleFree int64
+	var returnMsg ReturnMsg
+
 	var orderID = c.Param("id")
 	// var tradeType = c.DefaultQuery("tradetype", "NATIVE")
 	if "" != orderID {
@@ -100,70 +99,82 @@ func (WxPayControl) Pay(c *gin.Context) {
 		//查询订单
 		dbOrder.ID = bson.ObjectIdHex(orderID)
 		dbOrder.One(bson.M{"_id": bson.ObjectIdHex(orderID)})
-		ip := c.ClientIP()
-		//判断该订单是否是操作人的
-		if dbOrder.Buyer.ID == userid {
-			//查询支付表中该订单是否已支付
-			payment.Order = orderID
-			err = payment.One(bson.M{"order": orderID})
-			orderSeq := strings.Split(time.Now().Format("20060102150405.000000"), ".")
-			outTradeNo := orderSeq[0] + orderSeq[1]
-			if payment.ID.Valid() { //查询到该订单已存在
-				if payment.State == "0" { //未支付
-					if time.Now().Unix()-payment.CreateAt.Unix() <= 2*60*60 { // 两个小时内重复支付，则直接返回
-						returnMsg = &ReturnMsg{ResultCode: "SUCCESS", ReturnCode: "SUCCESS", CodeURL: payment.WxPayURL}
-						util.Glog.Debugf("微信支付二维码未过期,还剩%vs", 2*60*60-(time.Now().Unix()-payment.CreateAt.Unix()))
 
-					} else { //两个小时外，已失效,重新发起支付请求
-						amount := dbOrder.StrikePrice*100 + systemCharge*100
-						totoleFree, err = strconv.ParseInt(strconv.FormatFloat(amount, 'f', 0, 64), 10, 64)
-						if nil == err {
-
-							postData := NativePayParams{Appid: config.AppID, Attach: orderID, MchID: config.MchID, NonceStr: util.GetRandomString(6), Body: "4T fortravel.cn 订单支付", OutTradeNO: outTradeNo, TotalFee: totoleFree, SpbillCreateIP: ip, NotifyURL: config.PayNotifyURL, TradeType: "NATIVE"}
-
-							err = requestWx(UnifiedOrderURL, &postData, returnMsg)
-							if nil == err { //调用微信支付成功
-								if "SUCCESS" == returnMsg.ReturnCode && "SUCCESS" == returnMsg.ResultCode {
-									err = payment.UpdateOne(bson.M{"$set": bson.M{"wxPayURL": returnMsg.CodeURL, "createAt": time.Now()}})
-									util.Glog.Debugf("微信支付二维码已过期重新生成%v", returnMsg)
-								} else {
-									err = &util.GError{Code: -1, Err: returnMsg.ReturnMsg + returnMsg.ErrCodeDes}
-								}
-							}
-						} else {
-							err = &util.GError{Code: -1, Err: "微信支付支付金额转换失败"}
-						}
-					}
-				} else { //已支付过
-					err = &util.GError{Code: -1, Err: "已支付，不要重复支付"}
-				}
-			} else { //订单不存在，未支付过,新增订单
-
-				amount := dbOrder.StrikePrice*100 + systemCharge*100
-				totoleFree, err = strconv.ParseInt(strconv.FormatFloat(amount, 'f', 0, 64), 10, 64)
-				if nil == err {
-					postData := NativePayParams{Appid: config.AppID, Attach: orderID, MchID: config.MchID, NonceStr: util.GetRandomString(6), Body: "4T fortravel.cn 订单支付", OutTradeNO: outTradeNo, TotalFee: totoleFree, SpbillCreateIP: ip, NotifyURL: config.PayNotifyURL, TradeType: "NATIVE"}
-					err = requestWx(UnifiedOrderURL, &postData, returnMsg)
-					if nil == err { //调取微信支付成功
-						if "SUCCESS" == returnMsg.ReturnCode && "SUCCESS" == returnMsg.ResultCode {
-
-							//新增支付记录
-							payment = &order.Payment{ID: bson.NewObjectId(), Order: orderID, PayType: "pay", OutTradeNo: outTradeNo, TradeType: "purchase", CreateAt: time.Now(), TradeAmount: amount / 100, WxPayURL: returnMsg.CodeURL, State: "0"}
-							payment.Insert()
-						} else {
-							err = &util.GError{Code: -1, Err: returnMsg.ReturnMsg + returnMsg.ErrCodeDes}
-						}
-					}
-				} else {
-					err = &util.GError{Code: -1, Err: "微信支付支付金额转换失败"}
-				}
-			}
-		} else {
-			err = &util.GError{Code: -1, Err: "非法操作,不能操作他人订单,系统已记录此次操作"}
-		}
+		dbOrder.Buyer.IP = c.ClientIP()
+		returnMsg, err = wxpay.GetWxPay(dbOrder, userid)
 	} else {
 		err = &util.GError{Code: -1, Err: "数据完整性错误"}
 	}
 
 	util.JSON(c, util.ResponseMesage{Message: "获取微信支付", Data: returnMsg, Error: err})
+}
+
+func (WxPayControl) GetWxPay(dbOrder *order.Order, userid string) (ReturnMsg, error) {
+	//判断该订单是否是操作人的
+	var err error
+	var totoleFree int64
+	var returnMsg = new(ReturnMsg)
+	var payment = new(order.Payment)
+	var orderID = dbOrder.ID.Hex()
+	if dbOrder.Buyer.ID == userid {
+		//查询支付表中该订单是否已支付
+		payment.Order = orderID
+		err = payment.One(bson.M{"order": orderID})
+		orderSeq := strings.Split(time.Now().Format("20060102150405.000000"), ".")
+		outTradeNo := orderSeq[0] + orderSeq[1]
+		if payment.ID.Valid() { //查询到该订单支付已存在
+			if payment.State == "0" { //未支付
+				if time.Now().Unix()-payment.CreateAt.Unix() <= 2*60*60 { // 两个小时内重复支付，则直接返回
+					returnMsg = &ReturnMsg{ResultCode: "SUCCESS", ReturnCode: "SUCCESS", CodeURL: payment.WxPayURL}
+					util.Glog.Debugf("微信支付二维码未过期,还剩%vs", 2*60*60-(time.Now().Unix()-payment.CreateAt.Unix()))
+
+				} else { //两个小时外，已失效,重新发起支付请求
+					amount := dbOrder.StrikePrice*100 + systemCharge*100
+					totoleFree, err = strconv.ParseInt(strconv.FormatFloat(amount, 'f', 0, 64), 10, 64)
+					if nil == err {
+
+						postData := NativePayParams{Appid: config.AppID, Attach: orderID, MchID: config.MchID, NonceStr: util.GetRandomString(6), Body: "4T fortravel.cn 订单支付", OutTradeNO: outTradeNo, TotalFee: totoleFree, SpbillCreateIP: dbOrder.Buyer.IP, NotifyURL: config.PayNotifyURL, TradeType: "NATIVE"}
+
+						err = requestWx(UnifiedOrderURL, &postData, returnMsg)
+						if nil == err { //调用微信支付成功
+							if "SUCCESS" == returnMsg.ReturnCode && "SUCCESS" == returnMsg.ResultCode {
+								err = payment.UpdateOne(bson.M{"$set": bson.M{"wxPayURL": returnMsg.CodeURL, "createAt": time.Now()}})
+								util.Glog.Debugf("微信支付二维码已过期重新生成%v", returnMsg)
+							} else {
+								err = &util.GError{Code: -1, Err: returnMsg.ReturnMsg + returnMsg.ErrCodeDes}
+							}
+						}
+					} else {
+						err = &util.GError{Code: -1, Err: "微信支付支付金额转换失败"}
+					}
+				}
+			} else { //已支付过
+				err = &util.GError{Code: -1, Err: "已支付，不要重复支付"}
+			}
+		} else { //订单不存在，未支付过,新增订单
+
+			amount := dbOrder.StrikePrice*100 + systemCharge*100
+			totoleFree, err = strconv.ParseInt(strconv.FormatFloat(amount, 'f', 0, 64), 10, 64)
+			if nil == err {
+				postData := NativePayParams{Appid: config.AppID, Attach: orderID, MchID: config.MchID, NonceStr: util.GetRandomString(6), Body: "4T fortravel.cn 订单支付", OutTradeNO: outTradeNo, TotalFee: totoleFree, SpbillCreateIP: dbOrder.Buyer.IP, NotifyURL: config.PayNotifyURL, TradeType: "NATIVE"}
+				err = requestWx(UnifiedOrderURL, &postData, returnMsg)
+				if nil == err { //调取微信支付成功
+					if "SUCCESS" == returnMsg.ReturnCode && "SUCCESS" == returnMsg.ResultCode {
+
+						//新增支付记录
+						payment = &order.Payment{ID: bson.NewObjectId(), WxPayURL: returnMsg.CodeURL, Order: orderID, PayType: "pay", OutTradeNo: outTradeNo, TradeType: "purchase", CreateAt: time.Now(), TradeAmount: amount / 100, State: "0"}
+						err = payment.Insert()
+
+					} else {
+						err = &util.GError{Code: -1, Err: returnMsg.ReturnMsg + returnMsg.ErrCodeDes}
+					}
+				}
+			} else {
+				err = &util.GError{Code: -1, Err: "微信支付支付金额转换失败"}
+			}
+		}
+	} else {
+		err = &util.GError{Code: -1, Err: "非法操作,不能操作他人订单,系统已记录此次操作"}
+	}
+	return *returnMsg, err
 }

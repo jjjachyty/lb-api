@@ -17,7 +17,8 @@ type Express struct {
 	ContactNumber    string         `json:"contactNumber" form:"contactNumber" query:"contactNumber" bson:"contactNumber" binding:"-"` //联系电话
 	CreateAt         time.Time      `json:"createAt" form:"createAt" query:"createAt" bson:"createAt" binding:"-"`                     //创建时间
 	UpdateAt         time.Time      `json:"updateAt" form:"updateAt" query:"updateAt" bson:"updateAt" binding:"-"`                     //更新时间
-	State            string         `json:"state" form:"state" query:"state" bson:"state" binding:"-"`                                 //快递状态
+
+	State string `json:"state" form:"state" query:"state" bson:"state" binding:"-"` //快递状态
 }
 
 type Seller struct {
@@ -29,6 +30,9 @@ type Seller struct {
 	Express          Express        `json:"express" form:"express" query:"express" bson:"express" binding:"-"`                     //退货物流
 	BuyTicket        string         `json:"buyTicket" form:"buyTicket" query:"buyTicket" bson:"buyTicket" binding:"-"`
 	BuyTicketExplain string         `json:"buyTicketExplain" form:"buyTicketExplain" query:"buyTicketExplain" bson:"buyTicketExplain" binding:"-"`
+	Evaluate         string         `json:"evaluate" form:"evaluate" query:"evaluate" bson:"evaluate" binding:"-"`
+	EvaluateRate     int64          `json:"evaluateRate" form:"evaluateRate" query:"evaluateRate" bson:"evaluateRate" binding:"-"`
+	IP               string         `json:"ip" form:"ip" query:"ip" bson:"ip" binding:"-"`
 }
 type Buyer struct {
 	ID           string  `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
@@ -38,11 +42,14 @@ type Buyer struct {
 	ReturnTicket string  `json:"returnTicket" form:"returnTicket" query:"returnTicket" bson:"returnTicket" binding:"-"` //退货原因
 	CancelReason string  `json:"cancelReason" form:"cancelReason" query:"cancelReason" bson:"cancelReason" binding:"-"` //取消订单原因
 	Express      Express `json:"express" form:"express" query:"express" bson:"express" binding:"-"`                     //发货物流
+	Evaluate     string  `json:"evaluate" form:"evaluate" query:"evaluate" bson:"evaluate" binding:"-"`
+	EvaluateRate int64   `json:"evaluateRate" form:"evaluateRate" query:"evaluateRate" bson:"evaluateRate" binding:"-"`
+	IP           string  `json:"ip" form:"ip" query:"ip" bson:"ip" binding:"-"`
 }
 
 // Order struct 订单实体
 type Order struct {
-	ID bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id,omitempty" binding:"-"`
+	ID bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id" binding:"-"`
 	// BuyAmount        float64       `json:"buyAmount" form:"buyAmount" query:"buyAmount" bson:"buyAmount" binding:"required"`
 	Buyer Buyer `json:"buyer" form:"buyer" query:"buyer" bson:"buyer" binding:"-"`
 

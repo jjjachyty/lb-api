@@ -52,7 +52,7 @@ func (t *Date) UnmarshalJSON(data []byte) (err error) {
 }
 
 const (
-	quotationOrderCN = "quotationOrder"
+	quotationOrderCN = "quotation"
 )
 
 func checkProducts(v *validator.Validate, topStruct reflect.Value, currentStructOrField reflect.Value, field reflect.Value, fieldType reflect.Type, fieldKind reflect.Kind, param string) bool {

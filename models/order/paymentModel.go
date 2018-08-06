@@ -23,6 +23,7 @@ type Payer struct {
 
 type Payment struct {
 	ID          bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	PayChannel  string        //支付渠道，默认微信
 	OutTradeNo  string        `bson:"outTradeNo"`  //微信订单号
 	TradeType   string        `bson:"tradeType"`   //订单类型/1.代购，2.转卖，3为旅拍
 	TradeAmount float64       `bson:"tradeAmount"` //订单金额

@@ -60,11 +60,11 @@ func Init(e *gin.Engine) {
 	/*收货地址 ----end*/
 
 	user.POST("/exparticle", controlers.UserControl{}.NewExposureArticle)
-	user.PUT("/exparticle", controlers.UserControl{}.UpdateExposureArticles)
-	user.GET("/exparticle", controlers.UserControl{}.GetUserExpArtById)
+	//user.GET("/exparticle", controlers.UserControl{}.GetUserExpArtById)
 
-	user.GET("/myexparticle", controlers.UserControl{}.GetUserExposureArticles)
+	user.GET("/articles", controlers.UserControl{}.GetUserExposureArticles)
 	user.GET("/article/:id", controlers.UserControl{}.GetUserExposureArticle)
+	user.PUT("/article/:id", controlers.UserControl{}.UpdateExposureArticles)
 
 	user.DELETE("/myexparticle", controlers.UserControl{}.DeleteExposureArticles)
 	/* 我的物流代购 begin*/
@@ -105,11 +105,15 @@ func Init(e *gin.Engine) {
 	api.GET("/purchase", purchase.PurchaseControl{}.Get)
 	user.PUT("/purchase", purchase.PurchaseControl{}.Update)
 	user.POST("/invitation", purchase.PurchaseControl{}.Invitation)
+	user.POST("/purchase/confirm", purchase.PurchaseControl{}.Confirm)
 	user.DELETE("/purchase", purchase.PurchaseControl{}.Remove)
 
 	user.POST("/quotation", purchase.QuotationOrderControl{}.NewQuotationOrder)
 	user.PUT("/quotation", purchase.QuotationOrderControl{}.UpdateQuotationOrder)
 	user.GET("/quotations", purchase.QuotationOrderControl{}.UserQuotation)
+	api.GET("/purchasequotations", purchase.QuotationOrderControl{}.List)
+
+	api.GET("/quotationexpiry/:id", purchase.QuotationOrderControl{}.Expiry)
 	user.POST("/refusequotation", purchase.QuotationOrderControl{}.RefuseQuotationOrder)
 	/* 我的旅程 begin*/
 	user.GET("/journeys", purchase.JourneyControl{}.UserList)
@@ -124,6 +128,9 @@ func Init(e *gin.Engine) {
 	/* 我的订单 begin*/
 	user.GET("/orders", order.OrderControl{}.List)
 	user.PUT("/order/:id", order.OrderControl{}.Update)
+	user.GET("/checkorderpay/:id", order.OrderControl{}.CheckPay)
+	user.GET("/orderreceived/:id", order.OrderControl{}.Received)
+
 	pay := api.Group("/pay")
 	wxpay := pay.Group("/wx")
 	wxpay.POST("/notifiy", wx.WxPayControl{}.Notify)
@@ -139,5 +146,9 @@ func Init(e *gin.Engine) {
 	// 	claims := user.Claims.(*util.JwtCustomClaims)
 	// 	return c.String(http.StatusOK, "Welcome "+claims.Id+"!")
 	// })
+	wallet := api.Group("/wallet")
+	wallet.GET("/bancode/:number", order.WalletControl{}.GetBankCode)
+	wallet.Use(authMiddleware.MiddlewareFunc())
+	wallet.POST("/applyCash", order.WalletControl{}.ApplyCash)
 
 }

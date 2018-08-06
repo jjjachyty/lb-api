@@ -3,6 +3,7 @@ package purchase
 import (
 	"fmt"
 	"lb-api/middlewares"
+	"lb-api/models"
 	"lb-api/models/purchase"
 	"lb-api/util"
 	"strconv"
@@ -44,7 +45,6 @@ func (qoc QuotationOrderControl) NewQuotationOrder(c *gin.Context) {
 		qo.Creator = jwtData["nickName"].(string)
 		qo.CreateAt = time.Now().In(util.GetLocation())
 		qo.Amount += qo.Charge
-		fmt.Println("qo.CreateAt", qo.CreateAt)
 		// qo.ExpiryTime = expiryTime
 		//检查能否新增
 		err = qoc.canNew(*qo)
@@ -115,11 +115,11 @@ func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
 	var err error
 	quotationID := c.PostForm("quotationID")
 	purchaseID := c.PostForm("purchaseID")
-	reasonType := c.PostForm("reasonType")
+	// reasonType := c.PostForm("reasonType")
 
 	refuseReason := c.PostForm("reason")
 	allowRepeat := c.PostForm("allowRepeat")
-	if "" != quotationID && bson.IsObjectIdHex(purchaseID) && "" != refuseReason && "" != allowRepeat && "" != reasonType {
+	if "" != quotationID && bson.IsObjectIdHex(purchaseID) && "" != refuseReason && "" != allowRepeat {
 		//验证是否是本人操作自己的代购单
 		purchs, err = purchase.Purchase{}.Find([]string{"_id"}, 0, bson.M{}, bson.M{"_id": bson.ObjectIdHex(purchaseID), "createBy": middlewares.GetUserIDFromToken(c)})
 		if len(purchs) == 1 { //是本人操作
@@ -127,7 +127,7 @@ func (QuotationOrderControl) RefuseQuotationOrder(c *gin.Context) {
 			util.Glog.Debugf("代购单%s拒绝报价单%s,拒绝理由%s,运行再次报价%s", purchaseID, quotationID, refuseReason, allowRepeat)
 			allowRepeatBool, err = strconv.ParseBool(allowRepeat)
 			if nil == err {
-				err = purchase.QuotationOrder{}.Update(bson.M{"_id": bson.ObjectIdHex(quotationID)}, bson.M{"$set": bson.M{"state": "0", "reasonType": reasonType, "refuseReason": refuseReason, "allowRepeat": allowRepeatBool}})
+				err = purchase.QuotationOrder{}.Update(bson.M{"_id": bson.ObjectIdHex(quotationID)}, bson.M{"$set": bson.M{"state": "0", "refuseReason": refuseReason, "allowRepeat": allowRepeatBool}})
 				if nil == err {
 					err = purchase.Purchase{}.Update(bson.M{"_id": bson.ObjectIdHex(purchaseID)}, bson.M{"$set": bson.M{"state": "0"}})
 				}
@@ -193,4 +193,58 @@ func (QuotationOrderControl) canUpdate(qo purchase.QuotationOrder) error {
 
 	}
 	return err
+}
+
+//报价单过期处理
+func (QuotationOrderControl) Expiry(c *gin.Context) {
+	var err error
+	var qo = new(purchase.QuotationOrder)
+	id := c.Param("id")
+	if bson.IsObjectIdHex(id) {
+		models.One("quotation", bson.ObjectIdHex(id), qo)
+		if qo.ID.Valid() { //查询到报价单
+			if qo.ExpiryTime.Unix()-time.Now().Unix() < 0 { //过期
+				err = models.Update("quotation", bson.M{"_id": qo.ID}, bson.M{"$set": bson.M{"state": "-1"}})
+				if nil == err { //更新代购需求单为过期未处理
+					err = models.Update("purchase", bson.M{"_id": bson.ObjectIdHex(qo.PurchaseID)}, bson.M{"$set": bson.M{"state": "-1"}})
+				}
+			}
+		} else {
+			err = &util.GError{Code: -1, Err: "报价单不存在"}
+		}
+	} else {
+		err = &util.GError{Code: -1, Err: "报价单号错误"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "更新报价单过期", Data: nil, Error: err})
+}
+
+//报价单获取
+func (QuotationOrderControl) List(c *gin.Context) {
+	var err error
+	var qos []purchase.QuotationOrder
+	var purchaseID = c.Query("purchaseid")
+	//查询报价单
+	if bson.IsObjectIdHex(purchaseID) {
+
+		qos, err = purchase.QuotationOrder{}.Find("-createAt", 0, bson.M{}, bson.M{"purchaseID": purchaseID})
+		if len(qos) > 0 {
+			if "-1" != qos[0].State && qos[0].ExpiryTime.Unix()-time.Now().Unix() < 0 {
+				qos[0].State = "-1"
+				go func() {
+					err = models.Update("quotation", bson.M{"_id": qos[0].ID}, bson.M{"$set": bson.M{"state": "-1"}})
+					if nil == err { //更新代购需求单为过期未处理
+						err = models.Update("purchase", bson.M{"_id": bson.ObjectIdHex(qos[0].PurchaseID)}, bson.M{"$set": bson.M{"state": "-1"}})
+					}
+					if nil != err {
+						util.Glog.Errorf("更新报价单过期状态失败-%s", err.Error())
+					}
+				}()
+
+			}
+		}
+	} else {
+		err = &util.GError{Code: -1, Err: "代购单号错误"}
+	}
+	util.JSON(c, util.ResponseMesage{Message: "获取报价单", Data: qos, Error: err})
+
 }
