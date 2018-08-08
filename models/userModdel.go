@@ -59,6 +59,7 @@ type User struct {
 //银行卡
 type BankCard struct {
 	ID     bson.ObjectId `json:"id" form:"id" query:"id" bson:"_id"`
+	Code   string        `json:"code" form:"code" query:"code" bson:"code"`         //名字
 	Name   string        `json:"name" form:"name" query:"name" bson:"name"`         //名字
 	Number string        `json:"number" form:"number" query:"number" bson:"number"` //卡号
 }

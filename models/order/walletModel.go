@@ -23,7 +23,7 @@ type Transaction struct {
 
 //Transaction struct交易表
 type ApplyCash struct {
-	ID           bson.ObjectId   `json:"id" form:"id" query:"id" bson:"id" binding:"-"`
+	ID           bson.ObjectId   `json:"id" form:"id" query:"id" bson:"_id" binding:"-"`
 	PreAmount    float64         `json:"preAmount" form:"preAmount" query:"preAmount" bson:"preAmount" binding:"-"` //体现前金额
 	Amount       float64         `json:"amount" form:"amount" query:"amount" bson:"amount" binding:"required"`      //提现金额
 	UserName     string          `json:"userName" form:"userName" query:"userName" bson:"userName" binding:"-"`     //提现金额

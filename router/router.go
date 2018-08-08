@@ -149,6 +149,8 @@ func Init(e *gin.Engine) {
 	wallet := api.Group("/wallet")
 	wallet.GET("/bancode/:number", order.WalletControl{}.GetBankCode)
 	wallet.Use(authMiddleware.MiddlewareFunc())
-	wallet.POST("/applyCash", order.WalletControl{}.ApplyCash)
+	wallet.POST("/applycash", order.WalletControl{}.ApplyCash)
+	wallet.GET("/applycashs", order.WalletControl{}.GetApplyCashs)
+	wallet.GET("/transactions", order.WalletControl{}.GetTransactions)
 
 }
